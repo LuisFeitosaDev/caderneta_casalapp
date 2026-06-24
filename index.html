@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Caderneta do Casal</title>
+<style>
+  :root{
+    --paper:#F6F2E9;
+    --paper-line:#E4DCC8;
+    --ink:#202A22;
+    --ink-soft:#5B6359;
+    --gold:#B5862B;
+    --green:#2F5D50;
+    --blue:#3D5A80;
+    --brick:#A6493D;
+    --danger:#A6493D;
+    --card:#FFFDF8;
+    --shadow: 0 2px 10px rgba(32,42,34,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:96px;
+  }
+  .num{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-weight:600;}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 16px 0;}
+
+  /* header */
+  header.top{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin-bottom:6px;
+  }
+  h1.brand{
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    font-size:21px; letter-spacing:.2px; margin:0; color:var(--ink);
+  }
+  h1.brand span{color:var(--gold);}
+  .gear{
+    background:none;border:none;cursor:pointer;font-size:19px;color:var(--ink-soft);
+    padding:6px;line-height:1;
+  }
+
+  .month-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);border:1px solid var(--paper-line);
+    border-radius:14px;padding:10px 6px;margin:14px 0 16px;box-shadow:var(--shadow);
+  }
+  .month-row button{
+    background:none;border:none;font-size:18px;color:var(--green);cursor:pointer;
+    width:38px;height:38px;border-radius:10px;
+  }
+  .month-row button:active{background:var(--paper);}
+  .month-label{
+    font-family: Georgia, serif; font-size:16px; text-transform:capitalize;
+  }
+
+  /* summary card */
+  .summary{
+    background:var(--card);border:1px solid var(--paper-line);border-radius:16px;
+    padding:16px 16px 8px;box-shadow:var(--shadow);margin-bottom:16px;
+  }
+  .summary-top{display:flex;justify-content:space-between;margin-bottom:14px;}
+  .summary-stat .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;}
+  .summary-stat .value{font-size:18px;}
+  .summary-stat.saldo .value{color:var(--green);}
+  .summary-stat.saldo.negativo .value{color:var(--brick);}
+
+  .bars{display:flex;flex-direction:column;gap:10px;margin-bottom:8px;}
+  .bar-row{display:flex;align-items:center;gap:10px;}
+  .bar-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .bar-track{
+    flex:1;height:8px;background:var(--paper);border-radius:5px;overflow:hidden;
+    border:1px solid var(--paper-line);
+  }
+  .bar-fill{height:100%;border-radius:5px;}
+  .bar-text{font-size:11px;color:var(--ink-soft);min-width:96px;text-align:right;white-space:nowrap;}
+  .bar-name{font-size:12.5px;min-width:84px;}
+
+  /* list */
+  .day-group{margin-bottom:6px;}
+  .day-label{
+    font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;
+    margin:18px 2px 8px;
+  }
+  .item{
+    background:var(--card);border:1px solid var(--paper-line);
+    border-radius:13px;padding:11px 12px;margin-bottom:8px;
+    display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);
+  }
+  .cat-chip{
+    width:34px;height:34px;border-radius:9px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;color:#fff;font-weight:700;
+  }
+  .item-info{flex:1;min-width:0;}
+  .item-desc{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .item-meta{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .item-val{font-size:15px;white-space:nowrap;}
+  .del-btn{
+    background:none;border:none;color:var(--paper-line);font-size:17px;cursor:pointer;
+    padding:4px 2px 4px 6px;flex:0 0 auto;
+  }
+  .del-btn.armed{color:var(--brick);}
+
+  .empty{
+    text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:14px;
+  }
+
+  /* fab */
+  .fab{
+    position:fixed;bottom:24px;right:50%;transform:translateX(50%) translateX(244px);
+    width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;
+    border:none;font-size:28px;box-shadow:0 6px 18px rgba(47,93,80,0.4);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  @media (max-width:560px){
+    .fab{right:20px;transform:none;}
+  }
+
+  /* overlay/modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(32,42,34,0.45);
+    display:flex;align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .overlay.hidden{display:none;}
+  .sheet{
+    background:var(--paper);width:100%;max-width:560px;border-radius:20px 20px 0 0;
+    padding:18px 18px 24px;max-height:88vh;overflow-y:auto;
+    box-shadow:0 -8px 30px rgba(0,0,0,0.25);
+  }
+  .sheet h2{
+    font-family:Georgia,serif;font-size:18px;margin:2px 0 16px;
+  }
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+  .field input[type=text], .field input[type=date]{
+    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--paper-line);
+    background:var(--card);font-size:15px;color:var(--ink);
+  }
+  .valor-input{
+    width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--paper-line);
+    background:var(--card);font-size:26px;font-family: ui-monospace, Menlo, Consolas, monospace;
+    color:var(--ink);font-weight:700;
+  }
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{
+    padding:9px 14px;border-radius:999px;border:1px solid var(--paper-line);
+    background:var(--card);font-size:13.5px;cursor:pointer;color:var(--ink-soft);
+  }
+  .pill.active{color:#fff;border-color:transparent;}
+  .toggle-row{display:flex;gap:8px;}
+  .toggle-row .pill{flex:1;text-align:center;}
+  .save-btn{
+    width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);
+    color:#fff;font-size:15.5px;font-weight:600;cursor:pointer;margin-top:6px;
+  }
+  .save-btn:disabled{opacity:.5;}
+  .cancel-link{
+    display:block;text-align:center;margin-top:12px;color:var(--ink-soft);
+    font-size:13px;background:none;border:none;cursor:pointer;width:100%;
+  }
+  .sheet-handle{
+    width:36px;height:4px;background:var(--paper-line);border-radius:3px;margin:0 auto 14px;
+  }
+
+  .two-col{display:flex;gap:10px;}
+  .two-col .field{flex:1;}
+
+  .toast{
+    position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;
+    font-size:13.5px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:80;
+  }
+  .toast.show{opacity:1;}
+
+  .status-line{text-align:center;color:var(--ink-soft);font-size:12.5px;padding:14px 0;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">Caderneta <span>do Casal</span></h1>
+    <button class="gear" onclick="openSettings()">⚙</button>
+  </header>
+
+  <div class="month-row">
+    <button onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="monthLabel">—</div>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="summary">
+    <div class="summary-top">
+      <div class="summary-stat">
+        <div class="label">Renda</div>
+        <div class="value num" id="stRenda">R$ 0</div>
+      </div>
+      <div class="summary-stat">
+        <div class="label">Gastos</div>
+        <div class="value num" id="stGasto">R$ 0</div>
+      </div>
+      <div class="summary-stat saldo">
+        <div class="label">Saldo</div>
+        <div class="value num" id="stSaldo">R$ 0</div>
+      </div>
+    </div>
+    <div class="bars" id="bars"></div>
+  </div>
+
+  <div id="list"></div>
+  <div id="statusLine" class="status-line"></div>
+</div>
+
+<button class="fab" onclick="openAdd()">+</button>
+
+<!-- ADD SHEET -->
+<div class="overlay hidden" id="addOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Novo gasto</h2>
+
+    <div class="field">
+      <label>Valor</label>
+      <input class="valor-input" id="fValor" type="text" inputmode="decimal" placeholder="0,00" autofocus>
+    </div>
+
+    <div class="field">
+      <label>Descrição</label>
+      <input type="text" id="fDesc" placeholder="Ex: Mercado, Uber, Farmácia...">
+    </div>
+
+    <div class="field">
+      <label>Categoria</label>
+      <div class="pill-row" id="catPills"></div>
+    </div>
+
+    <div class="field">
+      <label>Quem gastou</label>
+      <div class="pill-row" id="pessoaPills"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Tipo</label>
+        <div class="toggle-row" id="tipoPills"></div>
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="fData">
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveBtn" onclick="saveGasto()">Salvar gasto</button>
+    <button class="cancel-link" onclick="closeAdd()">Cancelar</button>
+  </div>
+</div>
+
+<!-- SETTINGS SHEET -->
+<div class="overlay hidden" id="settingsOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Configurações da renda</h2>
+
+    <div class="field">
+      <label id="lbl1">Nome da pessoa 1</label>
+      <input type="text" id="fNome1">
+    </div>
+    <div class="field">
+      <label>Renda mensal (pessoa 1)</label>
+      <input type="text" id="fRenda1" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label id="lbl2">Nome da pessoa 2</label>
+      <input type="text" id="fNome2">
+    </div>
+    <div class="field">
+      <label>Renda mensal (pessoa 2)</label>
+      <input type="text" id="fRenda2" inputmode="decimal">
+    </div>
+
+    <button class="save-btn" onclick="savePerfil()">Salvar</button>
+    <button class="cancel-link" onclick="closeSettings()">Fechar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONEXÃO COM SUPABASE
+   Usamos só a chave pública (anon) — ela é segura para ficar
+   no código do navegador. NUNCA coloque a service_role/secret
+   key aqui.
+   ============================================================ */
+const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
+
+function sb(path, opts = {}) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": opts.prefer || "return=representation",
+      ...(opts.headers || {})
+    }
+  });
+}
+
+const CATS = [
+  { nome: "Essenciais",    cor: "#2F5D50", ideal: 0.50 },
+  { nome: "Fundamentais",  cor: "#3D5A80", ideal: 0.25 },
+  { nome: "Dispensáveis",  cor: "#A6493D", ideal: 0.15 },
+  { nome: "Investimentos", cor: "#B5862B", ideal: 0.10 }
+];
+const catByName = n => CATS.find(c => c.nome === n);
+
+let state = {
+  monthDate: startOfMonth(new Date()),
+  gastos: [],
+  perfil: { renda_pessoa1: 0, renda_pessoa2: 0, nome_pessoa1: "Kemillyn", nome_pessoa2: "Luis" },
+  catSel: "Dispensáveis",
+  pessoaSel: null,
+  tipoSel: "Variável",
+  loading: false
+};
+
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function fmtMoney(n){
+  return "R$ " + (n||0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function isoDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function monthRange(d){
+  const start = new Date(d.getFullYear(), d.getMonth(), 1);
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return { start: isoDate(start), end: isoDate(end) };
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+async function loadPerfil(){
+  const res = await sb("perfil?id=eq.1&select=*");
+  if(res.ok){
+    const rows = await res.json();
+    if(rows[0]) state.perfil = rows[0];
+  }
+}
+
+async function loadGastos(){
+  state.loading = true;
+  renderStatus("Carregando...");
+  const { start, end } = monthRange(state.monthDate);
+  const res = await sb(`gastos?data=gte.${start}&data=lte.${end}&select=*&order=data.desc,created_at.desc`);
+  if(res.ok){
+    state.gastos = await res.json();
+  } else {
+    renderStatus("Não foi possível carregar. Veja se a tabela 'gastos' já existe no Supabase.");
+  }
+  state.loading = false;
+  renderAll();
+}
+
+function renderStatus(msg){
+  document.getElementById("statusLine").textContent = msg || "";
+}
+
+function renderAll(){
+  renderMonthLabel();
+  renderSummary();
+  renderList();
+  renderStatus(state.gastos.length === 0 && !state.loading ? "" : "");
+}
+
+function renderMonthLabel(){
+  const label = state.monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  document.getElementById("monthLabel").textContent = label;
+}
+
+function renderSummary(){
+  const renda = Number(state.perfil.renda_pessoa1||0) + Number(state.perfil.renda_pessoa2||0);
+  const totalGasto = state.gastos.reduce((s,g)=>s+Number(g.valor),0);
+  const saldo = renda - totalGasto;
+
+  document.getElementById("stRenda").textContent = fmtMoney(renda);
+  document.getElementById("stGasto").textContent = fmtMoney(totalGasto);
+  const saldoEl = document.getElementById("stSaldo");
+  saldoEl.textContent = fmtMoney(saldo);
+  saldoEl.parentElement.classList.toggle("negativo", saldo < 0);
+
+  const barsEl = document.getElementById("bars");
+  barsEl.innerHTML = "";
+  CATS.forEach(cat=>{
+    const gastoCat = state.gastos.filter(g=>g.categoria===cat.nome).reduce((s,g)=>s+Number(g.valor),0);
+    const idealValor = renda * cat.ideal;
+    const pct = idealValor > 0 ? Math.min(100, (gastoCat/idealValor)*100) : (gastoCat>0?100:0);
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <div class="bar-dot" style="background:${cat.cor}"></div>
+      <div class="bar-name">${cat.nome}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cat.cor}"></div></div>
+      <div class="bar-text">${fmtMoney(gastoCat)} <span style="opacity:.6">/ ${fmtMoney(idealValor)}</span></div>
+    `;
+    barsEl.appendChild(row);
+  });
+}
+
+function renderList(){
+  const listEl = document.getElementById("list");
+  listEl.innerHTML = "";
+  if(state.gastos.length === 0){
+    listEl.innerHTML = `<div class="empty">Nenhum gasto lançado neste mês ainda.<br>Toque no botão + para adicionar o primeiro.</div>`;
+    return;
+  }
+  let lastDate = null;
+  state.gastos.forEach(g=>{
+    if(g.data !== lastDate){
+      lastDate = g.data;
+      const lbl = document.createElement("div");
+      lbl.className = "day-label";
+      const d = new Date(g.data + "T00:00:00");
+      lbl.textContent = d.toLocaleDateString("pt-BR", { weekday:"short", day:"2-digit", month:"short" });
+      listEl.appendChild(lbl);
+    }
+    const cat = catByName(g.categoria) || CATS[2];
+    const item = document.createElement("div");
+    item.className = "item";
+    item.innerHTML = `
+      <div class="cat-chip" style="background:${cat.cor}">${cat.nome[0]}</div>
+      <div class="item-info">
+        <div class="item-desc">${escapeHtml(g.descricao)}</div>
+        <div class="item-meta">${g.pessoa} · ${g.tipo}</div>
+      </div>
+      <div class="item-val num">${fmtMoney(g.valor)}</div>
+      <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)">✕</button>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+let deleteArmedId = null;
+function handleDelete(btn){
+  const id = btn.dataset.id;
+  if(deleteArmedId !== id){
+    document.querySelectorAll(".del-btn.armed").forEach(b=>b.classList.remove("armed"));
+    btn.classList.add("armed");
+    btn.textContent = "Confirmar";
+    deleteArmedId = id;
+    setTimeout(()=>{
+      if(deleteArmedId === id){
+        btn.classList.remove("armed");
+        btn.textContent = "✕";
+        deleteArmedId = null;
+      }
+    }, 3000);
+    return;
+  }
+  deleteArmedId = null;
+  deleteGasto(id);
+}
+
+async function deleteGasto(id){
+  const res = await sb(`gastos?id=eq.${id}`, { method:"DELETE" });
+  if(res.ok){
+    state.gastos = state.gastos.filter(g=>g.id!==id);
+    renderAll();
+    toast("Gasto removido");
+  } else {
+    toast("Não foi possível remover");
+  }
+}
+
+function changeMonth(delta){
+  const d = state.monthDate;
+  state.monthDate = new Date(d.getFullYear(), d.getMonth()+delta, 1);
+  loadGastos();
+}
+
+/* ---------- modal: novo gasto ---------- */
+function openAdd(){
+  document.getElementById("fValor").value = "";
+  document.getElementById("fDesc").value = "";
+  document.getElementById("fData").value = isoDate(new Date());
+  state.catSel = "Dispensáveis";
+  state.pessoaSel = state.perfil.nome_pessoa1;
+  state.tipoSel = "Variável";
+  buildCatPills();
+  buildPessoaPills();
+  buildTipoPills();
+  document.getElementById("addOverlay").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("fValor").focus(), 50);
+}
+function closeAdd(){
+  document.getElementById("addOverlay").classList.add("hidden");
+}
+
+function buildCatPills(){
+  const el = document.getElementById("catPills");
+  el.innerHTML = "";
+  CATS.forEach(cat=>{
+    const p = document.createElement("div");
+    p.className = "pill" + (state.catSel===cat.nome ? " active":"");
+    p.style.background = state.catSel===cat.nome ? cat.cor : "";
+    p.textContent = cat.nome;
+    p.onclick = ()=>{ state.catSel = cat.nome; buildCatPills(); };
+    el.appendChild(p);
+  });
+}
+function buildPessoaPills(){
+  const el = document.getElementById("pessoaPills");
+  el.innerHTML = "";
+  [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2].forEach(nome=>{
+    const p = document.createElement("div");
+    p.className = "pill" + (state.pessoaSel===nome ? " active":"");
+    p.style.background = state.pessoaSel===nome ? "#2F5D50" : "";
+    p.textContent = nome;
+    p.onclick = ()=>{ state.pessoaSel = nome; buildPessoaPills(); };
+    el.appendChild(p);
+  });
+}
+function buildTipoPills(){
+  const el = document.getElementById("tipoPills");
+  el.innerHTML = "";
+  ["Variável","Fixo"].forEach(t=>{
+    const p = document.createElement("div");
+    p.className = "pill" + (state.tipoSel===t ? " active":"");
+    p.style.background = state.tipoSel===t ? "#3D5A80" : "";
+    p.textContent = t;
+    p.onclick = ()=>{ state.tipoSel = t; buildTipoPills(); };
+    el.appendChild(p);
+  });
+}
+
+async function saveGasto(){
+  const rawValor = document.getElementById("fValor").value.replace(/\./g,"").replace(",",".");
+  const valor = parseFloat(rawValor);
+  const descricao = document.getElementById("fDesc").value.trim();
+  const data = document.getElementById("fData").value;
+
+  if(!valor || valor<=0){ toast("Informe um valor válido"); return; }
+  if(!descricao){ toast("Informe uma descrição"); return; }
+  if(!state.pessoaSel){ toast("Selecione quem gastou"); return; }
+
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true; btn.textContent = "Salvando...";
+
+  const res = await sb("gastos", {
+    method: "POST",
+    body: JSON.stringify([{
+      descricao, valor, categoria: state.catSel,
+      tipo: state.tipoSel, pessoa: state.pessoaSel, data
+    }])
+  });
+
+  btn.disabled = false; btn.textContent = "Salvar gasto";
+
+  if(res.ok){
+    closeAdd();
+    toast("Gasto adicionado");
+    const { start, end } = monthRange(state.monthDate);
+    if(data >= start && data <= end){ loadGastos(); }
+  } else {
+    toast("Erro ao salvar. Veja se a tabela existe no Supabase.");
+  }
+}
+
+/* ---------- modal: configurações ---------- */
+function openSettings(){
+  document.getElementById("fNome1").value = state.perfil.nome_pessoa1;
+  document.getElementById("fNome2").value = state.perfil.nome_pessoa2;
+  document.getElementById("fRenda1").value = String(state.perfil.renda_pessoa1).replace(".",",");
+  document.getElementById("fRenda2").value = String(state.perfil.renda_pessoa2).replace(".",",");
+  document.getElementById("settingsOverlay").classList.remove("hidden");
+}
+function closeSettings(){
+  document.getElementById("settingsOverlay").classList.add("hidden");
+}
+async function savePerfil(){
+  const nome_pessoa1 = document.getElementById("fNome1").value.trim() || "Pessoa 1";
+  const nome_pessoa2 = document.getElementById("fNome2").value.trim() || "Pessoa 2";
+  const renda_pessoa1 = parseFloat(document.getElementById("fRenda1").value.replace(/\./g,"").replace(",",".")) || 0;
+  const renda_pessoa2 = parseFloat(document.getElementById("fRenda2").value.replace(/\./g,"").replace(",",".")) || 0;
+
+  const res = await sb("perfil?id=eq.1", {
+    method: "PATCH",
+    body: JSON.stringify({ nome_pessoa1, nome_pessoa2, renda_pessoa1, renda_pessoa2 })
+  });
+  if(res.ok){
+    state.perfil = { ...state.perfil, nome_pessoa1, nome_pessoa2, renda_pessoa1, renda_pessoa2 };
+    closeSettings();
+    renderAll();
+    toast("Configurações salvas");
+  } else {
+    toast("Erro ao salvar. Veja se a tabela 'perfil' já existe no Supabase.");
+  }
+}
+
+/* ---------- init ---------- */
+(async function init(){
+  renderMonthLabel();
+  await loadPerfil();
+  await loadGastos();
+})();
+</script>
+</body>
+</html>
