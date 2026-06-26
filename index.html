@@ -51,7 +51,6 @@
   .num{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-weight:600; font-feature-settings:"tnum";}
   .wrap{max-width:560px;margin:0 auto;padding:18px 16px 0;}
 
-  /* header */
   header.top{
     display:flex;align-items:center;justify-content:space-between;
     margin-bottom:6px;
@@ -87,7 +86,6 @@
     font-size:14.5px; font-weight:600; text-transform:capitalize; letter-spacing:-.1px;
   }
 
-  /* summary card */
   .summary{
     background:var(--surface);border:1px solid var(--border);border-radius:14px;
     padding:16px 16px 8px;box-shadow:var(--shadow);margin-bottom:16px;
@@ -110,10 +108,9 @@
     border:1px solid var(--border);
   }
   .bar-fill{height:100%;border-radius:4px;}
-  .bar-text{font-size:10.5px;color:var(--ink-soft);min-width:96px;text-align:right;white-space:nowrap;}
+  .bar-text{font-size:10.5px;color:var(--ink-soft);min-width:84px;text-align:right;white-space:nowrap;}
   .bar-name{font-size:12px;min-width:84px;font-weight:600;}
 
-  /* list */
   .day-label{
     font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;
     margin:18px 2px 8px;font-weight:700;
@@ -130,8 +127,13 @@
   .cat-chip svg{width:16px;height:16px;}
   .item-info{flex:1;min-width:0;}
   .item-desc{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .item-meta{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .item-meta{font-size:11.5px;color:var(--ink-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .item-val{font-size:14.5px;white-space:nowrap;font-weight:700;}
+  .item-badge{
+    display:inline-block;background:var(--accent-soft);color:var(--accent);
+    font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:4px;
+    letter-spacing:.2px;margin-left:4px;vertical-align:middle;
+  }
   .del-btn{
     background:none;border:none;color:var(--ink-soft);cursor:pointer;
     padding:4px 2px 4px 6px;flex:0 0 auto;border-radius:7px;
@@ -144,7 +146,6 @@
     text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:13.5px;
   }
 
-  /* fab */
   .fab{
     position:fixed;bottom:24px;right:50%;transform:translateX(50%) translateX(244px);
     width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;
@@ -156,7 +157,6 @@
     .fab{right:20px;transform:none;}
   }
 
-  /* overlay/modal */
   .overlay{
     position:fixed;inset:0;background:rgba(10,14,20,0.5);
     display:flex;align-items:flex-end;justify-content:center;z-index:50;
@@ -164,7 +164,7 @@
   .overlay.hidden{display:none;}
   .sheet{
     background:var(--bg);width:100%;max-width:560px;border-radius:18px 18px 0 0;
-    padding:18px 18px 24px;max-height:88vh;overflow-y:auto;
+    padding:18px 18px 24px;max-height:92vh;overflow-y:auto;
     box-shadow:0 -8px 30px rgba(0,0,0,0.25);
     border-top:1px solid var(--border);
   }
@@ -173,10 +173,22 @@
   }
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;font-weight:600;}
-  .field input[type=text], .field input[type=date]{
+  .field input[type=text], .field input[type=date], .field select, .field textarea{
     width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--border);
     background:var(--surface);font-size:14.5px;color:var(--ink);
     font-family:inherit;
+  }
+  .field select{
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+    padding-right:36px;cursor:pointer;
+  }
+  html[data-theme="dark"] .field select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238B94A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  }
+  .field textarea{
+    resize:vertical;min-height:68px;line-height:1.5;
   }
   .valor-input{
     width:100%;padding:12px 12px;border-radius:9px;border:1px solid var(--border);
@@ -209,6 +221,31 @@
   .two-col{display:flex;gap:10px;}
   .two-col .field{flex:1;}
 
+  /* parcelas section */
+  .parcel-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:12px;margin-top:-4px;
+  }
+  .parcel-box .parcel-title{
+    font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;
+    font-weight:700;margin-bottom:10px;
+  }
+  .parcel-row{display:flex;gap:10px;align-items:flex-end;}
+  .parcel-row .field{margin-bottom:0;flex:1;}
+  .parcel-hint{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.45;}
+  .parcel-hint strong{color:var(--accent);font-weight:700;}
+
+  .parcel-toggle{
+    display:flex;align-items:center;gap:8px;cursor:pointer;
+    padding:10px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);margin-bottom:14px;
+  }
+  .parcel-toggle input[type=checkbox]{
+    width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto;
+  }
+  .parcel-toggle span{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .parcel-toggle small{font-size:11.5px;color:var(--ink-soft);margin-left:auto;}
+
   .toast{
     position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
     background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:9px;
@@ -217,6 +254,8 @@
   .toast.show{opacity:1;}
 
   .status-line{text-align:center;color:var(--ink-soft);font-size:12px;padding:14px 0;}
+
+  .divider{height:1px;background:var(--border);margin:12px 0;}
 </style>
 </head>
 <body>
@@ -280,13 +319,34 @@
     <h2>Novo gasto</h2>
 
     <div class="field">
-      <label>Valor</label>
+      <label>Valor da parcela / gasto</label>
       <input class="valor-input" id="fValor" type="text" inputmode="decimal" placeholder="0,00" autofocus>
     </div>
 
     <div class="field">
       <label>Descrição</label>
-      <input type="text" id="fDesc" placeholder="Ex: Mercado, Uber, Farmácia...">
+      <select id="fDesc">
+        <option value="">Selecione...</option>
+        <option>Apartamento</option>
+        <option>Condomínio</option>
+        <option>Energia</option>
+        <option>Internet</option>
+        <option>Pet</option>
+        <option>Dízimo</option>
+        <option>Academia</option>
+        <option>FastFood</option>
+        <option>Uber</option>
+        <option>Shopee</option>
+        <option>Streaming</option>
+        <option>Parcela</option>
+        <option>Pix Diverso</option>
+        <option>Assinatura</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Observação <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+      <textarea id="fObs" placeholder="Ex: Comida dos gatos, Teclado Musical..."></textarea>
     </div>
 
     <div class="field">
@@ -305,9 +365,33 @@
         <div class="toggle-row" id="tipoPills"></div>
       </div>
       <div class="field">
-        <label>Data</label>
+        <label>Data (1ª parcela / data)</label>
         <input type="date" id="fData">
       </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- PARCELAMENTO -->
+    <label class="parcel-toggle">
+      <input type="checkbox" id="fParcelado" onchange="toggleParcelado()">
+      <span>Gasto parcelado</span>
+      <small>dividir em meses</small>
+    </label>
+
+    <div id="parcelBox" class="parcel-box" style="display:none;">
+      <div class="parcel-title">Configurar parcelamento</div>
+      <div class="parcel-row">
+        <div class="field">
+          <label>Total de parcelas</label>
+          <input type="text" id="fParcelas" inputmode="numeric" placeholder="Ex: 12" oninput="updateParcelHint()">
+        </div>
+        <div class="field">
+          <label>Parcela atual</label>
+          <input type="text" id="fParcelaAtual" inputmode="numeric" placeholder="Ex: 1" oninput="updateParcelHint()">
+        </div>
+      </div>
+      <div class="parcel-hint" id="parcelHint"></div>
     </div>
 
     <button class="save-btn" id="saveBtn" onclick="saveGasto()">Salvar gasto</button>
@@ -346,12 +430,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ============================================================
-   CONEXÃO COM SUPABASE
-   Usamos só a chave pública (anon) — ela é segura para ficar
-   no código do navegador. NUNCA coloque a service_role/secret
-   key aqui.
-   ============================================================ */
 const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
 
@@ -368,7 +446,6 @@ function sb(path, opts = {}) {
   });
 }
 
-/* ---------- icon set (inline SVG paths, stroke="currentColor") ---------- */
 const ICONS = {
   home:      '<svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>',
   layers:    '<svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
@@ -408,9 +485,12 @@ let state = {
 };
 
 function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+
 function fmtMoney(n){
-  return "R$ " + (n||0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rounded = Math.round(n || 0);
+  return "R$ " + rounded.toLocaleString("pt-BR");
 }
+
 function isoDate(d){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${day}`;
@@ -425,6 +505,11 @@ function toast(msg){
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+function addMonths(dateStr, n){
+  const d = new Date(dateStr + "T00:00:00");
+  return new Date(d.getFullYear(), d.getMonth() + n, d.getDate());
 }
 
 async function loadPerfil(){
@@ -512,13 +597,24 @@ function renderList(){
       listEl.appendChild(lbl);
     }
     const cat = catByName(g.categoria) || CATS[2];
+
+    // build description line
+    let descLine = escapeHtml(g.descricao);
+    if(g.observacao) descLine += ` <span style="color:var(--ink-soft);font-weight:400">· ${escapeHtml(g.observacao)}</span>`;
+
+    // parcela badge
+    let parcelaBadge = "";
+    if(g.total_parcelas && g.total_parcelas > 1){
+      parcelaBadge = `<span class="item-badge">${g.parcela_atual}/${g.total_parcelas}x</span>`;
+    }
+
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `
       <div class="cat-chip" style="background:${cat.cor}">${cat.icon}</div>
       <div class="item-info">
-        <div class="item-desc">${escapeHtml(g.descricao)}</div>
-        <div class="item-meta">${g.pessoa} · ${g.tipo}</div>
+        <div class="item-desc">${descLine}${parcelaBadge}</div>
+        <div class="item-meta">${escapeHtml(g.pessoa)} · ${g.tipo}</div>
       </div>
       <div class="item-val num">${fmtMoney(g.valor)}</div>
       <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)">${ICONS.trash}</button>
@@ -528,6 +624,7 @@ function renderList(){
 }
 
 function escapeHtml(s){
+  if(!s) return "";
   const d = document.createElement("div");
   d.textContent = s;
   return d.innerHTML;
@@ -571,11 +668,47 @@ function changeMonth(delta){
   loadGastos();
 }
 
+/* ---------- parcelamento helpers ---------- */
+function toggleParcelado(){
+  const checked = document.getElementById("fParcelado").checked;
+  document.getElementById("parcelBox").style.display = checked ? "block" : "none";
+  if(checked){
+    // switch to Fixo when parcelado
+    state.tipoSel = "Fixo";
+    buildTipoPills();
+    updateParcelHint();
+  }
+}
+
+function updateParcelHint(){
+  const totalStr = document.getElementById("fParcelas").value.trim();
+  const atualStr = document.getElementById("fParcelaAtual").value.trim();
+  const dataVal  = document.getElementById("fData").value;
+  const hint = document.getElementById("parcelHint");
+  const total = parseInt(totalStr);
+  const atual = parseInt(atualStr) || 1;
+  if(!total || total < 2){ hint.innerHTML = ""; return; }
+  const restantes = total - atual + 1;
+  if(dataVal && restantes > 0){
+    const ultima = addMonths(dataVal, restantes - 1);
+    const ultiStr = ultima.toLocaleDateString("pt-BR", { month:"long", year:"numeric" });
+    hint.innerHTML = `Serão lançadas <strong>${restantes} parcela${restantes>1?"s":""}</strong> a partir deste mês, até <strong>${ultiStr}</strong>.`;
+  } else {
+    hint.innerHTML = `<strong>${restantes}</strong> parcela${restantes>1?"s":""} restantes.`;
+  }
+}
+
 /* ---------- modal: novo gasto ---------- */
 function openAdd(){
   document.getElementById("fValor").value = "";
   document.getElementById("fDesc").value = "";
+  document.getElementById("fObs").value = "";
   document.getElementById("fData").value = isoDate(new Date());
+  document.getElementById("fParcelado").checked = false;
+  document.getElementById("parcelBox").style.display = "none";
+  document.getElementById("fParcelas").value = "";
+  document.getElementById("fParcelaAtual").value = "1";
+  document.getElementById("parcelHint").innerHTML = "";
   state.catSel = "Dispensáveis";
   state.pessoaSel = state.perfil.nome_pessoa1;
   state.tipoSel = "Variável";
@@ -630,32 +763,68 @@ async function saveGasto(){
   const rawValor = document.getElementById("fValor").value.replace(/\./g,"").replace(",",".");
   const valor = parseFloat(rawValor);
   const descricao = document.getElementById("fDesc").value.trim();
+  const observacao = document.getElementById("fObs").value.trim();
   const data = document.getElementById("fData").value;
+  const parcelado = document.getElementById("fParcelado").checked;
 
   if(!valor || valor<=0){ toast("Informe um valor válido"); return; }
-  if(!descricao){ toast("Informe uma descrição"); return; }
+  if(!descricao){ toast("Selecione uma descrição"); return; }
   if(!state.pessoaSel){ toast("Selecione quem gastou"); return; }
+
+  let total_parcelas = 1;
+  let parcela_atual = 1;
+
+  if(parcelado){
+    total_parcelas = parseInt(document.getElementById("fParcelas").value) || 0;
+    parcela_atual  = parseInt(document.getElementById("fParcelaAtual").value) || 1;
+    if(total_parcelas < 2){ toast("Informe o total de parcelas (mínimo 2)"); return; }
+    if(parcela_atual < 1 || parcela_atual > total_parcelas){ toast("Parcela atual inválida"); return; }
+  }
 
   const btn = document.getElementById("saveBtn");
   btn.disabled = true; btn.textContent = "Salvando...";
 
+  // build array of rows to insert
+  const rows = [];
+  if(parcelado){
+    const restantes = total_parcelas - parcela_atual + 1;
+    for(let i = 0; i < restantes; i++){
+      const parcDate = addMonths(data, i);
+      rows.push({
+        descricao, valor, observacao: observacao || null,
+        categoria: state.catSel, tipo: "Fixo",
+        pessoa: state.pessoaSel,
+        data: isoDate(parcDate),
+        total_parcelas,
+        parcela_atual: parcela_atual + i
+      });
+    }
+  } else {
+    rows.push({
+      descricao, valor, observacao: observacao || null,
+      categoria: state.catSel, tipo: state.tipoSel,
+      pessoa: state.pessoaSel, data,
+      total_parcelas: 1, parcela_atual: 1
+    });
+  }
+
   const res = await sb("gastos", {
     method: "POST",
-    body: JSON.stringify([{
-      descricao, valor, categoria: state.catSel,
-      tipo: state.tipoSel, pessoa: state.pessoaSel, data
-    }])
+    body: JSON.stringify(rows)
   });
 
   btn.disabled = false; btn.textContent = "Salvar gasto";
 
   if(res.ok){
     closeAdd();
-    toast("Gasto adicionado");
+    const msg = parcelado
+      ? `${rows.length} parcela${rows.length>1?"s":"" } lançada${rows.length>1?"s":""}!`
+      : "Gasto adicionado";
+    toast(msg);
     const { start, end } = monthRange(state.monthDate);
     if(data >= start && data <= end){ loadGastos(); }
   } else {
-    toast("Erro ao salvar. Veja se a tabela existe no Supabase.");
+    toast("Erro ao salvar. Verifique se a tabela existe no Supabase.");
   }
 }
 
