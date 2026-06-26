@@ -6,166 +6,204 @@
 <title>Caderneta do Casal</title>
 <style>
   :root{
-    --paper:#F6F2E9;
-    --paper-line:#E4DCC8;
-    --ink:#202A22;
-    --ink-soft:#5B6359;
-    --gold:#B5862B;
-    --green:#2F5D50;
-    --blue:#3D5A80;
-    --brick:#A6493D;
-    --danger:#A6493D;
-    --card:#FFFDF8;
-    --shadow: 0 2px 10px rgba(32,42,34,0.08);
+    --bg:#F3F5F7;
+    --surface:#FFFFFF;
+    --border:#E1E5EA;
+    --ink:#161B22;
+    --ink-soft:#6B7280;
+    --accent:#1F3A5F;
+    --accent-soft:#E8EDF3;
+    --positive:#1F6F54;
+    --negative:#A8392B;
+    --cat-1:#1F6F54;
+    --cat-2:#2A4D78;
+    --cat-3:#A8392B;
+    --cat-4:#8A6A1E;
+    --shadow: 0 1px 2px rgba(16,24,32,0.04), 0 4px 14px rgba(16,24,32,0.06);
+  }
+  html[data-theme="dark"]{
+    --bg:#0E1217;
+    --surface:#161B22;
+    --border:#262D37;
+    --ink:#EAEDF1;
+    --ink-soft:#8B94A3;
+    --accent:#5B86B8;
+    --accent-soft:#1C2733;
+    --positive:#3FA383;
+    --negative:#D2685A;
+    --cat-1:#3FA383;
+    --cat-2:#5B86B8;
+    --cat-3:#D2685A;
+    --cat-4:#C9A23F;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.35);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--paper);
+    background:var(--bg);
     color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     min-height:100vh;
     padding-bottom:96px;
+    transition:background .15s,color .15s;
   }
-  .num{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-weight:600;}
+  svg.icon{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block;}
+  .num{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-weight:600; font-feature-settings:"tnum";}
   .wrap{max-width:560px;margin:0 auto;padding:18px 16px 0;}
 
   /* header */
   header.top{
-    display:flex;align-items:baseline;justify-content:space-between;
+    display:flex;align-items:center;justify-content:space-between;
     margin-bottom:6px;
   }
-  h1.brand{
-    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
-    font-size:21px; letter-spacing:.2px; margin:0; color:var(--ink);
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand-mark{
+    width:30px;height:30px;border-radius:8px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:#fff;flex:0 0 auto;
   }
-  h1.brand span{color:var(--gold);}
-  .gear{
-    background:none;border:none;cursor:pointer;font-size:19px;color:var(--ink-soft);
-    padding:6px;line-height:1;
+  h1.brand-text{
+    font-size:16.5px; font-weight:700; letter-spacing:-.1px; margin:0; color:var(--ink);
+    line-height:1.15;
   }
+  h1.brand-text .sub{display:block;font-size:11px;font-weight:500;color:var(--ink-soft);letter-spacing:.2px;}
+  .top-actions{display:flex;gap:4px;}
+  .icon-btn{
+    background:none;border:none;cursor:pointer;color:var(--ink-soft);
+    padding:8px;line-height:1;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn:hover{background:var(--accent-soft);color:var(--accent);}
 
   .month-row{
     display:flex;align-items:center;justify-content:space-between;
-    background:var(--card);border:1px solid var(--paper-line);
-    border-radius:14px;padding:10px 6px;margin:14px 0 16px;box-shadow:var(--shadow);
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:8px 6px;margin:14px 0 16px;box-shadow:var(--shadow);
   }
   .month-row button{
-    background:none;border:none;font-size:18px;color:var(--green);cursor:pointer;
-    width:38px;height:38px;border-radius:10px;
+    background:none;border:none;color:var(--ink-soft);cursor:pointer;
+    width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
   }
-  .month-row button:active{background:var(--paper);}
+  .month-row button:hover{background:var(--accent-soft);color:var(--accent);}
   .month-label{
-    font-family: Georgia, serif; font-size:16px; text-transform:capitalize;
+    font-size:14.5px; font-weight:600; text-transform:capitalize; letter-spacing:-.1px;
   }
 
   /* summary card */
   .summary{
-    background:var(--card);border:1px solid var(--paper-line);border-radius:16px;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
     padding:16px 16px 8px;box-shadow:var(--shadow);margin-bottom:16px;
   }
   .summary-top{display:flex;justify-content:space-between;margin-bottom:14px;}
-  .summary-stat .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;}
-  .summary-stat .value{font-size:18px;}
-  .summary-stat.saldo .value{color:var(--green);}
-  .summary-stat.saldo.negativo .value{color:var(--brick);}
+  .summary-stat .label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+  .summary-stat .value{font-size:17px;font-weight:700;}
+  .summary-stat.saldo .value{color:var(--positive);}
+  .summary-stat.saldo.negativo .value{color:var(--negative);}
 
   .bars{display:flex;flex-direction:column;gap:10px;margin-bottom:8px;}
   .bar-row{display:flex;align-items:center;gap:10px;}
-  .bar-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
-  .bar-track{
-    flex:1;height:8px;background:var(--paper);border-radius:5px;overflow:hidden;
-    border:1px solid var(--paper-line);
+  .bar-icon{
+    width:22px;height:22px;border-radius:6px;flex:0 0 auto;color:#fff;
+    display:flex;align-items:center;justify-content:center;
   }
-  .bar-fill{height:100%;border-radius:5px;}
-  .bar-text{font-size:11px;color:var(--ink-soft);min-width:96px;text-align:right;white-space:nowrap;}
-  .bar-name{font-size:12.5px;min-width:84px;}
+  .bar-icon svg{width:13px;height:13px;}
+  .bar-track{
+    flex:1;height:7px;background:var(--bg);border-radius:4px;overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .bar-fill{height:100%;border-radius:4px;}
+  .bar-text{font-size:10.5px;color:var(--ink-soft);min-width:96px;text-align:right;white-space:nowrap;}
+  .bar-name{font-size:12px;min-width:84px;font-weight:600;}
 
   /* list */
-  .day-group{margin-bottom:6px;}
   .day-label{
-    font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;
-    margin:18px 2px 8px;
+    font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;
+    margin:18px 2px 8px;font-weight:700;
   }
   .item{
-    background:var(--card);border:1px solid var(--paper-line);
-    border-radius:13px;padding:11px 12px;margin-bottom:8px;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:11px 12px;margin-bottom:8px;
     display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);
   }
   .cat-chip{
     width:34px;height:34px;border-radius:9px;flex:0 0 auto;
-    display:flex;align-items:center;justify-content:center;
-    font-size:14px;color:#fff;font-weight:700;
+    display:flex;align-items:center;justify-content:center;color:#fff;
   }
+  .cat-chip svg{width:16px;height:16px;}
   .item-info{flex:1;min-width:0;}
-  .item-desc{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .item-desc{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .item-meta{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
-  .item-val{font-size:15px;white-space:nowrap;}
+  .item-val{font-size:14.5px;white-space:nowrap;font-weight:700;}
   .del-btn{
-    background:none;border:none;color:var(--paper-line);font-size:17px;cursor:pointer;
-    padding:4px 2px 4px 6px;flex:0 0 auto;
+    background:none;border:none;color:var(--ink-soft);cursor:pointer;
+    padding:4px 2px 4px 6px;flex:0 0 auto;border-radius:7px;
+    display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
   }
-  .del-btn.armed{color:var(--brick);}
+  .del-btn:hover{color:var(--negative);}
+  .del-btn.armed{color:var(--negative);}
 
   .empty{
-    text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:14px;
+    text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:13.5px;
   }
 
   /* fab */
   .fab{
     position:fixed;bottom:24px;right:50%;transform:translateX(50%) translateX(244px);
-    width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;
-    border:none;font-size:28px;box-shadow:0 6px 18px rgba(47,93,80,0.4);cursor:pointer;
+    width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;
+    border:none;box-shadow:0 6px 18px rgba(31,58,95,0.35);cursor:pointer;
     display:flex;align-items:center;justify-content:center;
   }
+  .fab svg{width:24px;height:24px;}
   @media (max-width:560px){
     .fab{right:20px;transform:none;}
   }
 
   /* overlay/modal */
   .overlay{
-    position:fixed;inset:0;background:rgba(32,42,34,0.45);
+    position:fixed;inset:0;background:rgba(10,14,20,0.5);
     display:flex;align-items:flex-end;justify-content:center;z-index:50;
   }
   .overlay.hidden{display:none;}
   .sheet{
-    background:var(--paper);width:100%;max-width:560px;border-radius:20px 20px 0 0;
+    background:var(--bg);width:100%;max-width:560px;border-radius:18px 18px 0 0;
     padding:18px 18px 24px;max-height:88vh;overflow-y:auto;
     box-shadow:0 -8px 30px rgba(0,0,0,0.25);
+    border-top:1px solid var(--border);
   }
   .sheet h2{
-    font-family:Georgia,serif;font-size:18px;margin:2px 0 16px;
+    font-size:16.5px;font-weight:700;margin:2px 0 16px;letter-spacing:-.1px;
   }
   .field{margin-bottom:14px;}
-  .field label{display:block;font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+  .field label{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;font-weight:600;}
   .field input[type=text], .field input[type=date]{
-    width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--paper-line);
-    background:var(--card);font-size:15px;color:var(--ink);
+    width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);font-size:14.5px;color:var(--ink);
+    font-family:inherit;
   }
   .valor-input{
-    width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--paper-line);
-    background:var(--card);font-size:26px;font-family: ui-monospace, Menlo, Consolas, monospace;
+    width:100%;padding:12px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);font-size:25px;font-family: ui-monospace, Menlo, Consolas, monospace;
     color:var(--ink);font-weight:700;
   }
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
   .pill{
-    padding:9px 14px;border-radius:999px;border:1px solid var(--paper-line);
-    background:var(--card);font-size:13.5px;cursor:pointer;color:var(--ink-soft);
+    padding:8px 13px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);
+    display:inline-flex;align-items:center;gap:6px;
   }
+  .pill svg{width:14px;height:14px;}
   .pill.active{color:#fff;border-color:transparent;}
   .toggle-row{display:flex;gap:8px;}
-  .toggle-row .pill{flex:1;text-align:center;}
+  .toggle-row .pill{flex:1;justify-content:center;}
   .save-btn{
-    width:100%;padding:14px;border-radius:12px;border:none;background:var(--green);
-    color:#fff;font-size:15.5px;font-weight:600;cursor:pointer;margin-top:6px;
+    width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);
+    color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;
   }
   .save-btn:disabled{opacity:.5;}
   .cancel-link{
     display:block;text-align:center;margin-top:12px;color:var(--ink-soft);
-    font-size:13px;background:none;border:none;cursor:pointer;width:100%;
+    font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;width:100%;
   }
   .sheet-handle{
-    width:36px;height:4px;background:var(--paper-line);border-radius:3px;margin:0 auto 14px;
+    width:36px;height:4px;background:var(--border);border-radius:3px;margin:0 auto 14px;
   }
 
   .two-col{display:flex;gap:10px;}
@@ -173,26 +211,40 @@
 
   .toast{
     position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;
-    font-size:13.5px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:80;
+    background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:9px;
+    font-size:13px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:80;
   }
   .toast.show{opacity:1;}
 
-  .status-line{text-align:center;color:var(--ink-soft);font-size:12.5px;padding:14px 0;}
+  .status-line{text-align:center;color:var(--ink-soft);font-size:12px;padding:14px 0;}
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header class="top">
-    <h1 class="brand">Caderneta <span>do Casal</span></h1>
-    <button class="gear" onclick="openSettings()">⚙</button>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      </div>
+      <h1 class="brand-text">Caderneta<span class="sub">Controle financeiro do casal</span></h1>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Alternar tema"></button>
+      <button class="icon-btn" onclick="openSettings()" aria-label="Configurações">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
   </header>
 
   <div class="month-row">
-    <button onclick="changeMonth(-1)">‹</button>
+    <button onclick="changeMonth(-1)" aria-label="Mês anterior">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
     <div class="month-label" id="monthLabel">—</div>
-    <button onclick="changeMonth(1)">›</button>
+    <button onclick="changeMonth(1)" aria-label="Próximo mês">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
   </div>
 
   <div class="summary">
@@ -217,7 +269,9 @@
   <div id="statusLine" class="status-line"></div>
 </div>
 
-<button class="fab" onclick="openAdd()">+</button>
+<button class="fab" onclick="openAdd()" aria-label="Novo gasto">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
 
 <!-- ADD SHEET -->
 <div class="overlay hidden" id="addOverlay">
@@ -314,13 +368,34 @@ function sb(path, opts = {}) {
   });
 }
 
+/* ---------- icon set (inline SVG paths, stroke="currentColor") ---------- */
+const ICONS = {
+  home:      '<svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>',
+  layers:    '<svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  bag:       '<svg class="icon" viewBox="0 0 24 24"><path d="M6 8h12l1 13H5L6 8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>',
+  trendup:   '<svg class="icon" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  trash:     '<svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>',
+  sun:       '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
+  moon:      '<svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>'
+};
+
 const CATS = [
-  { nome: "Essenciais",    cor: "#2F5D50", ideal: 0.50 },
-  { nome: "Fundamentais",  cor: "#3D5A80", ideal: 0.25 },
-  { nome: "Dispensáveis",  cor: "#A6493D", ideal: 0.15 },
-  { nome: "Investimentos", cor: "#B5862B", ideal: 0.10 }
+  { nome: "Essenciais",    cor: "var(--cat-1)", ideal: 0.50, icon: ICONS.home },
+  { nome: "Fundamentais",  cor: "var(--cat-2)", ideal: 0.25, icon: ICONS.layers },
+  { nome: "Dispensáveis",  cor: "var(--cat-3)", ideal: 0.15, icon: ICONS.bag },
+  { nome: "Investimentos", cor: "var(--cat-4)", ideal: 0.10, icon: ICONS.trendup }
 ];
 const catByName = n => CATS.find(c => c.nome === n);
+
+let theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
+}
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+}
 
 let state = {
   monthDate: startOfMonth(new Date()),
@@ -410,7 +485,7 @@ function renderSummary(){
     const row = document.createElement("div");
     row.className = "bar-row";
     row.innerHTML = `
-      <div class="bar-dot" style="background:${cat.cor}"></div>
+      <div class="bar-icon" style="background:${cat.cor}">${cat.icon}</div>
       <div class="bar-name">${cat.nome}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cat.cor}"></div></div>
       <div class="bar-text">${fmtMoney(gastoCat)} <span style="opacity:.6">/ ${fmtMoney(idealValor)}</span></div>
@@ -440,13 +515,13 @@ function renderList(){
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `
-      <div class="cat-chip" style="background:${cat.cor}">${cat.nome[0]}</div>
+      <div class="cat-chip" style="background:${cat.cor}">${cat.icon}</div>
       <div class="item-info">
         <div class="item-desc">${escapeHtml(g.descricao)}</div>
         <div class="item-meta">${g.pessoa} · ${g.tipo}</div>
       </div>
       <div class="item-val num">${fmtMoney(g.valor)}</div>
-      <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)">✕</button>
+      <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)">${ICONS.trash}</button>
     `;
     listEl.appendChild(item);
   });
@@ -462,14 +537,14 @@ let deleteArmedId = null;
 function handleDelete(btn){
   const id = btn.dataset.id;
   if(deleteArmedId !== id){
-    document.querySelectorAll(".del-btn.armed").forEach(b=>b.classList.remove("armed"));
+    document.querySelectorAll(".del-btn.armed").forEach(b=>{ b.classList.remove("armed"); b.innerHTML = ICONS.trash; });
     btn.classList.add("armed");
-    btn.textContent = "Confirmar";
+    btn.innerHTML = ICONS.trash + "<span>Confirmar</span>";
     deleteArmedId = id;
     setTimeout(()=>{
       if(deleteArmedId === id){
         btn.classList.remove("armed");
-        btn.textContent = "✕";
+        btn.innerHTML = ICONS.trash;
         deleteArmedId = null;
       }
     }, 3000);
@@ -521,7 +596,7 @@ function buildCatPills(){
     const p = document.createElement("div");
     p.className = "pill" + (state.catSel===cat.nome ? " active":"");
     p.style.background = state.catSel===cat.nome ? cat.cor : "";
-    p.textContent = cat.nome;
+    p.innerHTML = cat.icon + `<span>${cat.nome}</span>`;
     p.onclick = ()=>{ state.catSel = cat.nome; buildCatPills(); };
     el.appendChild(p);
   });
@@ -532,7 +607,7 @@ function buildPessoaPills(){
   [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2].forEach(nome=>{
     const p = document.createElement("div");
     p.className = "pill" + (state.pessoaSel===nome ? " active":"");
-    p.style.background = state.pessoaSel===nome ? "#2F5D50" : "";
+    p.style.background = state.pessoaSel===nome ? "var(--accent)" : "";
     p.textContent = nome;
     p.onclick = ()=>{ state.pessoaSel = nome; buildPessoaPills(); };
     el.appendChild(p);
@@ -544,7 +619,7 @@ function buildTipoPills(){
   ["Variável","Fixo"].forEach(t=>{
     const p = document.createElement("div");
     p.className = "pill" + (state.tipoSel===t ? " active":"");
-    p.style.background = state.tipoSel===t ? "#3D5A80" : "";
+    p.style.background = state.tipoSel===t ? "var(--cat-2)" : "";
     p.textContent = t;
     p.onclick = ()=>{ state.tipoSel = t; buildTipoPills(); };
     el.appendChild(p);
@@ -617,6 +692,7 @@ async function savePerfil(){
 
 /* ---------- init ---------- */
 (async function init(){
+  applyTheme();
   renderMonthLabel();
   await loadPerfil();
   await loadGastos();
