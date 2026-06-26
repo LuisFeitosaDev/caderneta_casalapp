@@ -97,13 +97,13 @@
   .summary-stat .value{font-size:17px;font-weight:700;display:flex;align-items:center;gap:5px;}
   .summary-stat.saldo .value{color:var(--positive);}
   .summary-stat.saldo.negativo .value{color:var(--negative);}
-  .mood-emoji{font-size:16px;line-height:1;}
 
   .mood-line{
-    display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg);border:1px solid var(--border);
     border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;color:var(--ink-soft);font-weight:600;
+    text-align:center;
   }
-  .mood-line .big-emoji{font-size:18px;}
+  .mood-line .big-emoji{font-size:22px;}
 
   .bars{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
   .bar-row{display:flex;align-items:center;gap:10px;}
@@ -277,7 +277,7 @@
       </div>
       <div class="summary-stat saldo">
         <div class="label">Saldo</div>
-        <div class="value num" id="stSaldo"><span id="moodEmojiInline" class="mood-emoji"></span> R$ 0</div>
+        <div class="value num" id="stSaldo">R$ 0</div>
       </div>
     </div>
     <div class="mood-line" id="moodLine"></div>
@@ -335,6 +335,7 @@
         <input type="date" id="fData">
       </div>
     </div>
+    <div class="hint" id="tipoHint" style="margin:-6px 0 14px;"></div>
 
     <div class="field">
       <label>Compra parcelada?</label>
@@ -442,7 +443,8 @@ function toggleTheme(){
 
 let state = {
   monthDate: startOfMonth(new Date()),
-  gastos: [],
+  gastos: [],       // lançamentos avulsos + parcelas do mês exibido
+  fixos: [],         // todos os modelos de gasto fixo (recorrentes)
   perfil: { renda_pessoa1: 0, renda_pessoa2: 0, nome_pessoa1: "Kemillyn", nome_pessoa2: "Luis" },
   catSel: "Dispensáveis",
   pessoaSel: null,
@@ -471,6 +473,10 @@ function monthRange(d){
   const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
   return { start: isoDate(start), end: isoDate(end) };
 }
+function mesIndex(dateStr){
+  const [y,m] = dateStr.split("-").map(Number);
+  return y*12 + (m-1);
+}
 function toast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -486,16 +492,56 @@ async function loadPerfil(){
   }
 }
 
+async function loadFixos(){
+  const res = await sb("fixos?select=*");
+  if(res.ok){
+    state.fixos = await res.json();
+  }
+}
+
+/* Gera as ocorrências "virtuais" dos gastos fixos para um mês específico */
+function virtuaisDoMes(monthDate){
+  const y = monthDate.getFullYear(), m = monthDate.getMonth();
+  const mesAtual = y*12 + m;
+  const lastDay = new Date(y, m+1, 0).getDate();
+  return state.fixos
+    .filter(f=>{
+      const mesInicio = mesIndex(f.data_inicio);
+      const mesFim = f.data_fim ? mesIndex(f.data_fim) : Infinity;
+      return mesAtual >= mesInicio && mesAtual < mesFim;
+    })
+    .map(f=>{
+      const day = Math.min(f.dia, lastDay);
+      const data = isoDate(new Date(y, m, day));
+      return {
+        id: `fixo-${f.id}-${data}`,
+        __virtual: true,
+        fixoId: f.id,
+        descricao: f.descricao,
+        observacao: f.observacao,
+        categoria: f.categoria,
+        pessoa: f.pessoa,
+        valor: Number(f.valor),
+        tipo: "Fixo",
+        data,
+        parcela_grupo_id: null, parcela_atual: null, parcela_total: null
+      };
+    });
+}
+
 async function loadGastos(){
   state.loading = true;
   renderStatus("Carregando...");
   const { start, end } = monthRange(state.monthDate);
   const res = await sb(`gastos?data=gte.${start}&data=lte.${end}&select=*&order=data.desc,created_at.desc`);
+  let avulsos = [];
   if(res.ok){
-    state.gastos = await res.json();
+    avulsos = await res.json();
   } else {
     renderStatus("Não foi possível carregar. Veja se a tabela 'gastos' já existe (e tem as colunas novas) no Supabase.");
   }
+  const fixosDoMes = virtuaisDoMes(state.monthDate);
+  state.gastos = [...avulsos, ...fixosDoMes].sort((a,b)=> b.data.localeCompare(a.data));
   state.loading = false;
   renderAll();
 }
@@ -532,7 +578,7 @@ function renderSummary(){
   document.getElementById("stGasto").textContent = fmtMoney(totalGasto);
   const saldoEl = document.getElementById("stSaldo");
   const mood = getMood(saldo, renda);
-  saldoEl.innerHTML = `<span class="mood-emoji">${mood.emoji}</span> ${fmtMoney(saldo)}`;
+  saldoEl.textContent = fmtMoney(saldo);
   saldoEl.parentElement.classList.toggle("negativo", saldo < 0);
 
   const moodLine = document.getElementById("moodLine");
@@ -579,8 +625,19 @@ function renderList(){
 
     let metaTxt = `${g.pessoa} · ${g.tipo}`;
     if(g.parcela_total){ metaTxt += ` · Parcela ${g.parcela_atual}/${g.parcela_total}`; }
+    if(g.__virtual){ metaTxt += ` · Recorrente`; }
 
-    const showCancelFuture = g.parcela_grupo_id && g.parcela_atual < g.parcela_total;
+    const showCancelParcela = g.parcela_grupo_id && g.parcela_atual < g.parcela_total;
+
+    let actionsHtml = "";
+    if(g.__virtual){
+      actionsHtml = `<button class="del-btn" data-fixoid="${g.fixoId}" onclick="handleEndFixo(this)" title="Remover a partir deste mês">${ICONS.trash}</button>`;
+    } else {
+      actionsHtml = `
+        ${showCancelParcela ? `<button class="del-btn cancel-btn" data-grupo="${g.parcela_grupo_id}" data-data="${g.data}" onclick="handleCancelFuture(this)" title="Cancelar parcelas futuras">${ICONS.ban}</button>` : ``}
+        <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)" title="Excluir">${ICONS.trash}</button>
+      `;
+    }
 
     item.innerHTML = `
       <div class="cat-chip" style="background:${cat.cor}">${cat.icon}</div>
@@ -591,10 +648,7 @@ function renderList(){
       </div>
       <div class="item-right">
         <div class="item-val num">${fmtMoney(g.valor)}</div>
-        <div class="item-actions">
-          ${showCancelFuture ? `<button class="del-btn cancel-btn" data-grupo="${g.parcela_grupo_id}" data-data="${g.data}" onclick="handleCancelFuture(this)" title="Cancelar parcelas futuras">${ICONS.ban}</button>` : ``}
-          <button class="del-btn" data-id="${g.id}" onclick="handleDelete(this)" title="Excluir">${ICONS.trash}</button>
-        </div>
+        <div class="item-actions">${actionsHtml}</div>
       </div>
     `;
     listEl.appendChild(item);
@@ -642,9 +696,9 @@ async function deleteGasto(id){
 let cancelArmedKey = null;
 function handleCancelFuture(btn){
   const grupo = btn.dataset.grupo, data = btn.dataset.data;
-  const key = grupo + data;
+  const key = "parcela-"+grupo+data;
   if(cancelArmedKey !== key){
-    document.querySelectorAll(".cancel-btn.armed").forEach(b=>{ b.classList.remove("armed"); b.innerHTML = ICONS.ban; });
+    document.querySelectorAll(".del-btn.armed").forEach(b=>{ b.classList.remove("armed"); b.innerHTML = b.classList.contains("cancel-btn") ? ICONS.ban : ICONS.trash; });
     btn.classList.add("armed");
     btn.innerHTML = ICONS.ban + "<span>Confirmar</span>";
     cancelArmedKey = key;
@@ -671,6 +725,41 @@ async function cancelFutureInstallments(grupoId, dataAtual){
   }
 }
 
+/* Remove um gasto FIXO a partir do mês que está sendo exibido.
+   Meses anteriores ao mês exibido continuam mostrando o histórico normalmente. */
+let endFixoArmedId = null;
+function handleEndFixo(btn){
+  const fixoId = btn.dataset.fixoid;
+  if(endFixoArmedId !== fixoId){
+    document.querySelectorAll(".del-btn.armed").forEach(b=>{ b.classList.remove("armed"); b.innerHTML = ICONS.trash; });
+    btn.classList.add("armed");
+    btn.innerHTML = ICONS.trash + "<span>Confirmar</span>";
+    endFixoArmedId = fixoId;
+    setTimeout(()=>{
+      if(endFixoArmedId === fixoId){
+        btn.classList.remove("armed");
+        btn.innerHTML = ICONS.trash;
+        endFixoArmedId = null;
+      }
+    }, 3000);
+    return;
+  }
+  endFixoArmedId = null;
+  endFixoFromMonth(fixoId);
+}
+
+async function endFixoFromMonth(fixoId){
+  const { start } = monthRange(state.monthDate);
+  const res = await sb(`fixos?id=eq.${fixoId}`, { method:"PATCH", body: JSON.stringify({ data_fim: start }) });
+  if(res.ok){
+    toast("Fixo removido a partir deste mês — meses anteriores continuam no histórico");
+    await loadFixos();
+    loadGastos();
+  } else {
+    toast("Não foi possível remover o fixo");
+  }
+}
+
 function changeMonth(delta){
   const d = state.monthDate;
   state.monthDate = new Date(d.getFullYear(), d.getMonth()+delta, 1);
@@ -694,6 +783,7 @@ function openAdd(){
   buildParceladoPills();
   document.getElementById("parcelasField").style.display = "none";
   document.getElementById("valorHintParcela").textContent = "";
+  updateTipoHint();
   document.getElementById("addOverlay").classList.remove("hidden");
   setTimeout(()=>document.getElementById("fValor").focus(), 50);
 }
@@ -722,7 +812,7 @@ function buildCatPills(){
 function buildPessoaPills(){
   const el = document.getElementById("pessoaPills");
   el.innerHTML = "";
-  [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2].forEach(nome=>{
+  [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2, "Ambos"].forEach(nome=>{
     const p = document.createElement("div");
     p.className = "pill" + (state.pessoaSel===nome ? " active":"");
     p.style.background = state.pessoaSel===nome ? "var(--accent)" : "";
@@ -739,7 +829,7 @@ function buildTipoPills(){
     p.className = "pill" + (state.tipoSel===t ? " active":"");
     p.style.background = state.tipoSel===t ? "var(--cat-2)" : "";
     p.textContent = t;
-    p.onclick = ()=>{ state.tipoSel = t; buildTipoPills(); };
+    p.onclick = ()=>{ state.tipoSel = t; buildTipoPills(); updateTipoHint(); };
     el.appendChild(p);
   });
 }
@@ -756,9 +846,16 @@ function buildParceladoPills(){
       buildParceladoPills();
       document.getElementById("parcelasField").style.display = opt.v ? "block" : "none";
       document.getElementById("valorHintParcela").textContent = opt.v ? "(valor de cada parcela)" : "";
+      updateTipoHint();
     };
     el.appendChild(p);
   });
+}
+function updateTipoHint(){
+  const el = document.getElementById("tipoHint");
+  el.textContent = (state.tipoSel === "Fixo" && !state.parceladoSel)
+    ? "Esse gasto se repete todo mês a partir desta data, até você removê-lo."
+    : "";
 }
 
 async function saveGasto(){
@@ -772,6 +869,32 @@ async function saveGasto(){
   if(!descricao){ toast("Selecione uma descrição"); return; }
   if(!state.pessoaSel){ toast("Selecione quem gastou"); return; }
 
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true; btn.textContent = "Salvando...";
+
+  /* Gasto fixo (não parcelado) -> cria um modelo recorrente na tabela "fixos" */
+  if(state.tipoSel === "Fixo" && !state.parceladoSel){
+    const dia = parseInt(data.split("-")[2], 10);
+    const res = await sb("fixos", {
+      method: "POST",
+      body: JSON.stringify([{
+        descricao, observacao, categoria: state.catSel, pessoa: state.pessoaSel,
+        valor, dia, data_inicio: data
+      }])
+    });
+    btn.disabled = false; btn.textContent = "Salvar gasto";
+    if(res.ok){
+      closeAdd();
+      toast("Gasto fixo criado — vai se repetir todo mês a partir de agora");
+      await loadFixos();
+      loadGastos();
+    } else {
+      toast("Erro ao salvar. Veja se a tabela 'fixos' existe no Supabase.");
+    }
+    return;
+  }
+
+  /* Avulso ou parcelado -> grava linha(s) na tabela "gastos" */
   let rows;
   if(state.parceladoSel){
     const numParcelas = Math.max(2, parseInt(document.getElementById("fParcelas").value) || 2);
@@ -787,9 +910,6 @@ async function saveGasto(){
       pessoa: state.pessoaSel, data, observacao
     }];
   }
-
-  const btn = document.getElementById("saveBtn");
-  btn.disabled = true; btn.textContent = "Salvando...";
 
   const res = await sb("gastos", { method: "POST", body: JSON.stringify(rows) });
 
@@ -841,6 +961,7 @@ async function savePerfil(){
   applyTheme();
   renderMonthLabel();
   await loadPerfil();
+  await loadFixos();
   await loadGastos();
 })();
 </script>
