@@ -1934,7 +1934,14 @@ function gameLoop(ts){
       updateGameHud();
       continue; // some da tela
     }
-    if(it.y > canvas.height + 20) continue; // saiu, descarta
+    if(it.y > canvas.height + 20){
+      if(!it.boleto){
+        game.lives--;
+        if(game.lives <= 0){ game.lives = 0; game.gameOverPending = true; }
+        updateGameHud();
+      }
+      continue; // saiu, descarta
+    }
     ctx.fillText(it.emoji, it.x, it.y);
     keep.push(it);
   }
