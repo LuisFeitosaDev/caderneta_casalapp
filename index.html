@@ -233,7 +233,22 @@
 </div>
 
 <!-- APP CONTENT -->
-<div id="appContent" style="display:none;">
+<div id="appContent" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   SUPABASE
+   ============================================================ */
+const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Conteúdo do app: só existe como string até o login ser confirmado.
+   Isso evita que a estrutura da interface fique visível no DOM (F12)
+   para quem não passou pela autenticação. */
+const APP_CONTENT_HTML = `
 
 <div class="wrap">
   <header class="top">
@@ -401,17 +416,7 @@
 
 <div class="toast" id="toast"></div>
 
-</div><!-- /appContent -->
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* ============================================================
-   SUPABASE
-   ============================================================ */
-const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+`;
 
 function sb(path, opts = {}) {
   return supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -432,12 +437,40 @@ function sb(path, opts = {}) {
 /* ============================================================
    SENHA (verificada no servidor via Edge Function)
    ============================================================ */
+let failedAttempts = 0;
+let lockoutUntil = 0;
+let lockoutTimer = null;
+
+function startLockoutCountdown(seconds){
+  const btn = document.getElementById("lockBtn");
+  const errEl = document.getElementById("lockError");
+  const input = document.getElementById("lockInput");
+  lockoutUntil = Date.now() + seconds * 1000;
+  input.disabled = true;
+  btn.disabled = true;
+
+  clearInterval(lockoutTimer);
+  lockoutTimer = setInterval(() => {
+    const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+    if(remaining <= 0){
+      clearInterval(lockoutTimer);
+      errEl.textContent = "";
+      input.disabled = false;
+      btn.disabled = false;
+      input.focus();
+      return;
+    }
+    errEl.textContent = `Muitas tentativas. Aguarde ${remaining}s.`;
+  }, 250);
+}
+
 async function tryUnlock(){
   const input = document.getElementById("lockInput");
   const btn = document.getElementById("lockBtn");
   const errEl = document.getElementById("lockError");
   const val = input.value;
 
+  if(Date.now() < lockoutUntil) return; // ainda em cooldown local
   if(!val){ return; }
 
   btn.disabled = true;
@@ -456,11 +489,27 @@ async function tryUnlock(){
     const data = await res.json();
 
     if(!res.ok){
-      errEl.textContent = data.error || "Senha incorreta. Tente novamente.";
       input.value = "";
       input.focus();
+
+      // 429 = a própria Edge Function já bloqueou por excesso de tentativas
+      if(res.status === 429){
+        startLockoutCountdown(15 * 60);
+        return;
+      }
+
+      failedAttempts++;
+      if(failedAttempts >= 3){
+        failedAttempts = 0;
+        startLockoutCountdown(30);
+        return;
+      }
+
+      errEl.textContent = data.error || "Senha incorreta. Tente novamente.";
       return;
     }
+
+    failedAttempts = 0;
 
     const { error } = await supabaseClient.auth.setSession({
       access_token: data.access_token,
@@ -476,14 +525,17 @@ async function tryUnlock(){
   } catch(e){
     errEl.textContent = "Erro de conexão. Tente novamente.";
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Entrar";
+    if(Date.now() >= lockoutUntil){
+      btn.disabled = false;
+      btn.textContent = "Entrar";
+    }
   }
 }
 document.getElementById("lockInput").addEventListener("keydown", function(e){ if(e.key==="Enter") tryUnlock(); });
 
 function showApp(){
   document.getElementById("lockScreen").style.display = "none";
+  mountAppContent();
   document.getElementById("appContent").style.display = "block";
   initApp();
 }
@@ -626,6 +678,30 @@ function unlockBody(){
    SHEET DISMISS: click fora + arrastar para baixo
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  // Não há mais nada do #appContent no DOM neste momento — ele só é
+  // criado depois do login (ver mountAppContent()). Aqui só checamos
+  // se já existe uma sessão válida, para pular a tela de senha.
+  checkExistingSession();
+});
+
+async function checkExistingSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){
+    showApp();
+  }
+}
+
+/* ============================================================
+   MONTAGEM DO CONTEÚDO DO APP (só acontece após login confirmado)
+   Isso evita que a estrutura da interface fique no DOM antes da
+   autenticação — quem inspecionar a página deslogado só vê a tela
+   de senha, mais nada.
+   ============================================================ */
+function mountAppContent(){
+  const appEl = document.getElementById('appContent');
+  if(appEl.dataset.mounted === "1") return; // evita remontar em relogins
+  appEl.innerHTML = APP_CONTENT_HTML;
+  appEl.dataset.mounted = "1";
 
   // --- Fechar clicando no backdrop (fora do sheet) ---
   document.getElementById('addOverlay').addEventListener('pointerdown', function(e) {
@@ -647,16 +723,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if(e.target === el) e.preventDefault();
     }, { passive: false });
   });
-
-  // --- Restaurar sessão já existente (evita pedir senha de novo) ---
-  checkExistingSession();
-});
-
-async function checkExistingSession(){
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if(session){
-    showApp();
-  }
 }
 
 function dismissSheet(which) {
