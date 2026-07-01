@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Caderneta do Casal</title>
+
+<!-- PWA: permite adicionar à tela de início no iOS e Android -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A5F">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Caderneta">
 <style>
   :root{
     --bg:#F3F5F7;
@@ -281,6 +290,12 @@ const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
 
 /* Conteúdo do app: só existe como string até o login ser confirmado.
    Isso evita que a estrutura da interface fique visível no DOM (F12)
