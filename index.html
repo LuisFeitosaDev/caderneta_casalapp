@@ -108,8 +108,8 @@
   .comp-arrow.flat{color:var(--ink-soft);}
   .comp-arrow svg{width:10px;height:10px;}
 
-  .reacao-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:4px;flex:0 0 auto;border-radius:7px;display:flex;align-items:center;font-size:15px;line-height:1;}
-  .reacao-btn:hover{background:var(--accent-soft);}
+  .reacao-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:4px 6px;flex:0 0 auto;border-radius:7px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .reacao-btn:hover{background:var(--accent-soft);color:var(--accent);}
   .reacao-badge{font-size:15px;line-height:1;padding:3px 6px;border-radius:7px;background:var(--accent-soft);}
 
   .reacao-popover{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:220px;}
@@ -476,14 +476,14 @@ const APP_CONTENT_HTML = `
       <p class="hint" style="text-align:center;margin-bottom:10px;">Quem vai jogar?</p>
       <div class="pill-row" id="gamePlayerPills" style="justify-content:center;"></div>
       <div class="game-score-row" id="gameBestScores"></div>
-      <p class="hint" style="text-align:center;">Pegue as moedas 🪙, desvie dos boletos 🧾. 30 segundos.</p>
+      <p class="hint" style="text-align:center;">Pegue as moedas 🪙, desvie dos boletos 🧾. Você tem 3 vidas — cada boleto pego custa uma vida, e o jogo vai ficando mais rápido!</p>
       <button class="save-btn" id="gameStartBtn" onclick="startGame()">Começar</button>
     </div>
 
     <div id="gamePlayScreen" style="display:none;">
       <div class="game-hud">
         <span id="gameScoreLabel">Pontos: 0</span>
-        <span id="gameTimeLabel">30s</span>
+        <span id="gameLivesLabel">❤️❤️❤️</span>
       </div>
       <canvas id="gameCanvas" width="320" height="420"></canvas>
     </div>
@@ -783,9 +783,10 @@ async function checkExistingSession(){
    ============================================================ */
 function mountAppContent(){
   const appEl = document.getElementById('appContent');
-  if(appEl.dataset.mounted === "1") return; // evita remontar em relogins
+  if(appEl.dataset.mounted === "1") { applyTheme(); return; } // evita remontar em relogins, mas garante ícone certo
   appEl.innerHTML = APP_CONTENT_HTML;
   appEl.dataset.mounted = "1";
+  applyTheme(); // o botão de tema só existe a partir daqui — sem isso, o ícone fica vazio
 
   // --- Fechar clicando no backdrop (fora do sheet) ---
   document.getElementById('addOverlay').addEventListener('pointerdown', function(e) {
@@ -1325,8 +1326,8 @@ function renderList(){
     if(!g.__virtual){
       const reactBtn=document.createElement("button");
       reactBtn.className="reacao-btn";
-      reactBtn.title=g.reacao?"Trocar reação":"Reagir / combinado";
-      reactBtn.textContent=g.reacao?"✏️":"😊";
+      reactBtn.title=g.reacao?"Trocar reação":"Reagir";
+      reactBtn.textContent="Reagir";
       reactBtn.addEventListener("click",(e)=>{ e.stopPropagation(); openReactionPicker(g,reactBtn); });
       actionsEl.appendChild(reactBtn);
     }
@@ -1784,7 +1785,7 @@ async function savePerfil(){
 let game = {
   player: null,
   score: 0,
-  timeLeft: 30,
+  lives: 3,
   running: false,
   items: [],
   basketX: 160,
@@ -1792,8 +1793,8 @@ let game = {
   ctx: null,
   lastSpawn: 0,
   rafId: null,
-  timerId: null,
-  startedAt: 0
+  startedAt: 0,
+  gameOverPending: false
 };
 
 function openGame(){
@@ -1860,21 +1861,16 @@ function startGame(){
   game.basketX = canvas.width / 2;
   game.items = [];
   game.score = 0;
-  game.timeLeft = 30;
+  game.lives = 3;
   game.lastSpawn = 0;
   game.startedAt = performance.now();
   game.running = true;
+  game.gameOverPending = false;
 
   updateGameHud();
 
   canvas.addEventListener("pointermove", onGamePointerMove);
   canvas.addEventListener("pointerdown", onGamePointerMove);
-
-  game.timerId = setInterval(() => {
-    game.timeLeft--;
-    updateGameHud();
-    if(game.timeLeft <= 0) endGame();
-  }, 1000);
 
   game.rafId = requestAnimationFrame(gameLoop);
 }
@@ -1887,7 +1883,7 @@ function onGamePointerMove(e){
 
 function updateGameHud(){
   document.getElementById("gameScoreLabel").textContent = `Pontos: ${game.score}`;
-  document.getElementById("gameTimeLabel").textContent = `${Math.max(0, game.timeLeft)}s`;
+  document.getElementById("gameLivesLabel").textContent = "❤️".repeat(game.lives) + "🖤".repeat(3 - game.lives);
 }
 
 function gameLoop(ts){
@@ -1895,15 +1891,19 @@ function gameLoop(ts){
   const ctx = game.ctx, canvas = game.canvas;
   const elapsed = ts - game.startedAt;
 
-  // Spawna itens com frequência crescente
-  const spawnInterval = Math.max(420, 900 - elapsed / 60);
+  // Começa devagar e com poucos boletos; com o tempo, cai mais rápido e
+  // mais boletos aparecem (até um teto, pra não ficar impossível).
+  const spawnInterval = Math.max(360, 1100 - elapsed / 45);
+  const boletoChance = Math.min(0.38, 0.06 + elapsed / 45000);
+  const speedBase = 1.8 + elapsed / 12000;
+
   if(ts - game.lastSpawn > spawnInterval){
     game.lastSpawn = ts;
-    const isBoleto = Math.random() < 0.18;
+    const isBoleto = Math.random() < boletoChance;
     game.items.push({
       x: 24 + Math.random() * (canvas.width - 48),
       y: -20,
-      speed: 2.2 + Math.random() * 1.6 + elapsed / 12000,
+      speed: speedBase + Math.random() * 1.4,
       emoji: isBoleto ? "🧾" : "🪙",
       boleto: isBoleto
     });
@@ -1925,8 +1925,12 @@ function gameLoop(ts){
     it.y += it.speed;
     const caught = Math.abs(it.x - game.basketX) < 30 && it.y > basketY - 18 && it.y < basketY + 18;
     if(caught){
-      game.score += it.boleto ? -1 : 1;
-      if(game.score < 0) game.score = 0;
+      if(it.boleto){
+        game.lives--;
+        if(game.lives <= 0){ game.lives = 0; game.gameOverPending = true; }
+      } else {
+        game.score++;
+      }
       updateGameHud();
       continue; // some da tela
     }
@@ -1940,13 +1944,17 @@ function gameLoop(ts){
   ctx.font = "34px sans-serif";
   ctx.fillText("🧺", game.basketX, basketY);
 
+  if(game.gameOverPending){
+    endGame();
+    return;
+  }
+
   game.rafId = requestAnimationFrame(gameLoop);
 }
 
 function stopGameLoops(){
   game.running = false;
   if(game.rafId) cancelAnimationFrame(game.rafId);
-  if(game.timerId) clearInterval(game.timerId);
   if(game.canvas){
     game.canvas.removeEventListener("pointermove", onGamePointerMove);
     game.canvas.removeEventListener("pointerdown", onGamePointerMove);
