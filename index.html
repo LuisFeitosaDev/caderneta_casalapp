@@ -227,7 +227,7 @@
     <h2>Caderneta do Casal</h2>
     <p>Digite a senha de acesso</p>
     <input type="password" id="lockInput" inputmode="numeric" maxlength="4" placeholder="••••" autofocus>
-    <button class="save-btn" onclick="tryUnlock()">Entrar</button>
+    <button class="save-btn" id="lockBtn" onclick="tryUnlock()">Entrar</button>
     <div class="lock-error" id="lockError"></div>
   </div>
 </div>
@@ -383,6 +383,7 @@
     </div>
     <button class="save-btn" onclick="savePerfil()">Salvar</button>
     <button class="cancel-link" onclick="closeSettings()">Fechar</button>
+    <button class="cancel-link" onclick="signOutApp()" style="color:var(--negative);">Sair (encerrar sessão)</button>
   </div>
 </div>
 
@@ -402,42 +403,94 @@
 
 </div><!-- /appContent -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ============================================================
-   SENHA
-   ============================================================ */
-const APP_PASSWORD = "5928";
-function tryUnlock(){
-  const val = document.getElementById("lockInput").value;
-  if(val === APP_PASSWORD){
-    document.getElementById("lockScreen").style.display = "none";
-    document.getElementById("appContent").style.display = "block";
-    initApp();
-  } else {
-    document.getElementById("lockError").textContent = "Senha incorreta. Tente novamente.";
-    document.getElementById("lockInput").value = "";
-    document.getElementById("lockInput").focus();
-  }
-}
-document.getElementById("lockInput").addEventListener("keydown", function(e){ if(e.key==="Enter") tryUnlock(); });
-
 /* ============================================================
    SUPABASE
    ============================================================ */
 const SUPABASE_URL = "https://scijljydorstqqigskgo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjaWpsanlkb3JzdHFxaWdza2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU3NDksImV4cCI6MjA4ODY2MTc0OX0.y7IqkaGH95J9jdQPsfmhxymOJPWZWPMq0ZcM2QgKQGs";
 
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 function sb(path, opts = {}) {
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers: {
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      "Content-Type": "application/json",
-      "Prefer": opts.prefer || "return=representation",
-      ...(opts.headers || {})
-    }
+  return supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    const token = session && session.access_token ? session.access_token : SUPABASE_ANON_KEY;
+    return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      ...opts,
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Prefer": opts.prefer || "return=representation",
+        ...(opts.headers || {})
+      }
+    });
   });
+}
+
+/* ============================================================
+   SENHA (verificada no servidor via Edge Function)
+   ============================================================ */
+async function tryUnlock(){
+  const input = document.getElementById("lockInput");
+  const btn = document.getElementById("lockBtn");
+  const errEl = document.getElementById("lockError");
+  const val = input.value;
+
+  if(!val){ return; }
+
+  btn.disabled = true;
+  btn.textContent = "Verificando...";
+  errEl.textContent = "";
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-pin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ pin: val })
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errEl.textContent = data.error || "Senha incorreta. Tente novamente.";
+      input.value = "";
+      input.focus();
+      return;
+    }
+
+    const { error } = await supabaseClient.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token
+    });
+
+    if(error){
+      errEl.textContent = "Não foi possível iniciar a sessão.";
+      return;
+    }
+
+    showApp();
+  } catch(e){
+    errEl.textContent = "Erro de conexão. Tente novamente.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Entrar";
+  }
+}
+document.getElementById("lockInput").addEventListener("keydown", function(e){ if(e.key==="Enter") tryUnlock(); });
+
+function showApp(){
+  document.getElementById("lockScreen").style.display = "none";
+  document.getElementById("appContent").style.display = "block";
+  initApp();
+}
+
+async function signOutApp(){
+  await supabaseClient.auth.signOut();
+  window.location.reload();
 }
 
 /* ============================================================
@@ -453,7 +506,6 @@ const ICONS = {
   moon:      '<svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>',
   ban:       '<svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>',
   forward:   '<svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9.5 16l3-2.5-3-2.5"/></svg>',
-  // Ícones específicos por descrição (sem emoji)
   pet:       '<svg class="icon" viewBox="0 0 24 24"><ellipse cx="6" cy="7" rx="2" ry="3"/><ellipse cx="18" cy="7" rx="2" ry="3"/><ellipse cx="10.5" cy="4" rx="1.5" ry="2.5"/><ellipse cx="13.5" cy="4" rx="1.5" ry="2.5"/><path d="M12 13c-4 0-7 2-7 6h14c0-4-3-6-7-6z"/></svg>',
   academia:  '<svg class="icon" viewBox="0 0 24 24"><path d="M6 4v16"/><path d="M18 4v16"/><path d="M3 8h3"/><path d="M18 8h3"/><path d="M3 16h3"/><path d="M18 16h3"/><path d="M6 12h12"/></svg>',
   apt:       '<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="1"/><path d="M8 21V9h8v12"/><path d="M2 9h20"/><path d="M10 12h4"/><path d="M10 15h4"/><path d="M10 18h4"/></svg>',
@@ -595,7 +647,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if(e.target === el) e.preventDefault();
     }, { passive: false });
   });
+
+  // --- Restaurar sessão já existente (evita pedir senha de novo) ---
+  checkExistingSession();
 });
+
+async function checkExistingSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){
+    showApp();
+  }
+}
 
 function dismissSheet(which) {
   const overlayId = which === 'add' ? 'addOverlay' : 'settingsOverlay';
