@@ -94,6 +94,29 @@
   .mood-line{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;color:var(--ink-soft);font-weight:600;text-align:center;}
   .mood-line .big-emoji{font-size:22px;}
 
+  .meta-wrap{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+  .meta-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .meta-label{font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+  .meta-value{font-size:12px;font-weight:700;}
+  .meta-track{height:8px;background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+  .meta-fill{height:100%;border-radius:5px;background:var(--positive);transition:width .3s;}
+  .meta-fill.negativo{background:var(--negative);}
+
+  .comp-arrow{display:inline-flex;align-items:center;gap:2px;font-weight:700;font-size:10px;}
+  .comp-arrow.up{color:var(--negative);}
+  .comp-arrow.down{color:var(--positive);}
+  .comp-arrow.flat{color:var(--ink-soft);}
+  .comp-arrow svg{width:10px;height:10px;}
+
+  .reacao-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:4px;flex:0 0 auto;border-radius:7px;display:flex;align-items:center;font-size:15px;line-height:1;}
+  .reacao-btn:hover{background:var(--accent-soft);}
+  .reacao-badge{font-size:15px;line-height:1;padding:3px 6px;border-radius:7px;background:var(--accent-soft);}
+
+  .reacao-popover{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:220px;}
+  .reacao-popover button{background:none;border:none;font-size:20px;cursor:pointer;padding:5px;border-radius:8px;line-height:1;}
+  .reacao-popover button:hover{background:var(--accent-soft);}
+  .reacao-overlay-click{position:fixed;inset:0;z-index:55;}
+
   .bars{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
   .bar-row{display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:8px;padding:4px;margin:0 -4px;transition:background .12s;}
   .bar-row:hover{background:var(--accent-soft);}
@@ -292,6 +315,7 @@ const APP_CONTENT_HTML = `
       </div>
     </div>
     <div class="mood-line" id="moodLine"></div>
+    <div class="meta-wrap" id="metaWrap" style="display:none;"></div>
     <div class="bars" id="bars"></div>
   </div>
 
@@ -395,6 +419,11 @@ const APP_CONTENT_HTML = `
     <div class="field">
       <label>Renda mensal (pessoa 2)</label>
       <input type="text" id="fRenda2" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>Meta de economia mensal <span style="text-transform:none;font-weight:500;">(opcional)</span></label>
+      <input type="text" id="fMeta" inputmode="decimal" placeholder="0,00">
+      <div class="hint">Se preenchida, mostramos o progresso do saldo do mês em relação a essa meta. Deixe em branco ou 0 para não mostrar.</div>
     </div>
     <button class="save-btn" onclick="savePerfil()">Salvar</button>
     <button class="cancel-link" onclick="closeSettings()">Fechar</button>
@@ -637,7 +666,8 @@ let state = {
   monthDate: startOfMonth(new Date()),
   gastos: [],
   fixos: [],
-  perfil: { renda_pessoa1:0, renda_pessoa2:0, nome_pessoa1:"Kemillyn", nome_pessoa2:"Luis" },
+  perfil: { renda_pessoa1:0, renda_pessoa2:0, nome_pessoa1:"Kemillyn", nome_pessoa2:"Luis", meta_economia:0 },
+  prevCatTotals: {},
   catSel: "Dispensáveis",
   pessoaSel: null,
   tipoSel: "Variável",
@@ -1039,8 +1069,25 @@ async function loadGastos(){
   else { renderStatus("Não foi possível carregar. Veja se a tabela 'gastos' existe no Supabase."); }
   const fixosDoMes=virtuaisDoMes(state.monthDate);
   state.gastos=[...avulsos,...fixosDoMes].sort((a,b)=>b.data.localeCompare(a.data));
+  await loadComparativoMesAnterior();
   state.loading=false;
   renderAll();
+}
+
+/* Totais por categoria do mês anterior, para a seta de comparação */
+async function loadComparativoMesAnterior(){
+  const d=state.monthDate;
+  const prevDate=new Date(d.getFullYear(),d.getMonth()-1,1);
+  const {start,end}=monthRange(prevDate);
+  const res=await sb(`gastos?data=gte.${start}&data=lte.${end}&select=categoria,valor`);
+  let avulsos=[];
+  if(res.ok){ avulsos=await res.json(); }
+  const fixosDoMesAnterior=virtuaisDoMes(prevDate);
+  const todos=[...avulsos,...fixosDoMesAnterior];
+  const totals={};
+  CATS.forEach(c=>{ totals[c.nome]=0; });
+  todos.forEach(g=>{ totals[g.categoria]=(totals[g.categoria]||0)+Number(g.valor); });
+  state.prevCatTotals=totals;
 }
 
 function renderStatus(msg){ document.getElementById("statusLine").textContent=msg||""; }
@@ -1068,6 +1115,35 @@ function getMood(saldo,renda){
   return {emoji:"😄",label:"Mês positivo"};
 }
 
+function renderMetaEconomia(saldo){
+  const wrap=document.getElementById("metaWrap");
+  const meta=Number(state.perfil.meta_economia||0);
+  if(!meta || meta<=0){ wrap.style.display="none"; wrap.innerHTML=""; return; }
+  wrap.style.display="block";
+  const pct=Math.max(0,Math.min(100,(saldo/meta)*100));
+  const atingiu=saldo>=meta;
+  wrap.innerHTML=`
+    <div class="meta-top">
+      <span class="meta-label">${atingiu?"🎯 Meta de economia atingida":"Meta de economia"}</span>
+      <span class="meta-value">${fmtMoney(Math.max(0,saldo))} / ${fmtMoney(meta)}</span>
+    </div>
+    <div class="meta-track"><div class="meta-fill${saldo<0?" negativo":""}" style="width:${saldo<0?100:pct}%"></div></div>
+  `;
+}
+
+/* Seta comparando o gasto da categoria com o mesmo total do mês anterior */
+function compArrowHtml(categoria,valorAtual){
+  const prev=Number(state.prevCatTotals[categoria]||0);
+  if(prev<=0 && valorAtual<=0) return "";
+  const diff=valorAtual-prev;
+  const limiar=Math.max(prev*0.03,1); // ignora variações irrisórias
+  let dir="flat", seta="";
+  if(diff>limiar){ dir="up"; seta='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>'; }
+  else if(diff<-limiar){ dir="down"; seta='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>'; }
+  else { seta='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>'; }
+  return `<span class="comp-arrow ${dir}" title="Mês anterior: ${fmtMoney(prev)}">${seta}${fmtMoney(Math.abs(diff))}</span>`;
+}
+
 function renderSummary(){
   const renda=Number(state.perfil.renda_pessoa1||0)+Number(state.perfil.renda_pessoa2||0);
   const totalGasto=state.gastos.reduce((s,g)=>s+Number(g.valor),0);
@@ -1081,6 +1157,8 @@ function renderSummary(){
   const moodLine=document.getElementById("moodLine");
   moodLine.innerHTML=`<span class="big-emoji">${mood.emoji}</span><span>${mood.label}</span>`;
 
+  renderMetaEconomia(saldo);
+
   const barsEl=document.getElementById("bars");
   barsEl.innerHTML="";
   CATS.forEach(cat=>{
@@ -1093,7 +1171,7 @@ function renderSummary(){
       <div class="bar-icon" style="background:${cat.cor}">${cat.icon}</div>
       <div class="bar-name">${cat.nome}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cat.cor}"></div></div>
-      <div class="bar-text">${fmtMoney(gastoCat)} <span style="opacity:.6">/ ${fmtMoney(idealValor)}</span></div>
+      <div class="bar-text">${fmtMoney(gastoCat)} <span style="opacity:.6">/ ${fmtMoney(idealValor)}</span> ${compArrowHtml(cat.nome,gastoCat)}</div>
     `;
     row.onclick=()=>{
       state.categoriaFiltro=(state.categoriaFiltro===cat.nome)?null:cat.nome;
@@ -1183,11 +1261,22 @@ function renderList(){
       </div>
       <div class="item-right">
         <div class="item-val num">${fmtMoney(g.valor)}</div>
+        ${g.reacao?`<div class="reacao-badge">${g.reacao}</div>`:''}
         <div class="item-actions"></div>
       </div>
     `;
 
     const actionsEl=item.querySelector(".item-actions");
+
+    // Reação/combinado — só para gastos avulsos (fixos são virtuais e não têm linha própria por mês)
+    if(!g.__virtual){
+      const reactBtn=document.createElement("button");
+      reactBtn.className="reacao-btn";
+      reactBtn.title=g.reacao?"Trocar reação":"Reagir / combinado";
+      reactBtn.textContent=g.reacao?"✏️":"😊";
+      reactBtn.addEventListener("click",(e)=>{ e.stopPropagation(); openReactionPicker(g,reactBtn); });
+      actionsEl.appendChild(reactBtn);
+    }
 
     // "Jogar para o próximo mês" — only for non-parcelada items
     if(!isParcelada) {
@@ -1246,6 +1335,72 @@ async function duplicateToNextMonth(g){
     const [ny,nm]=novaData.split("-").map(Number);
     if(state.monthDate.getFullYear()===ny&&(state.monthDate.getMonth()+1)===nm){ loadGastos(); }
   } else { toast("Não foi possível lançar no próximo mês"); }
+}
+
+/* ============================================================
+   REAÇÃO / COMBINADO — emoji leve num gasto lançado pelo parceiro
+   ============================================================ */
+const REACAO_EMOJIS=['👍','❤️','😅','😬','✅','❓','🎉','😱'];
+let openReactionState=null;
+
+function closeReactionPicker(){
+  if(openReactionState){
+    openReactionState.popover.remove();
+    openReactionState.overlay.remove();
+    openReactionState=null;
+  }
+}
+
+function openReactionPicker(g, btnEl){
+  closeReactionPicker();
+
+  const overlay=document.createElement("div");
+  overlay.className="reacao-overlay-click";
+  overlay.addEventListener("click",closeReactionPicker);
+  document.body.appendChild(overlay);
+
+  const pop=document.createElement("div");
+  pop.className="reacao-popover";
+
+  REACAO_EMOJIS.forEach(em=>{
+    const b=document.createElement("button");
+    b.textContent=em;
+    b.addEventListener("click",(e)=>{ e.stopPropagation(); saveReaction(g,em); closeReactionPicker(); });
+    pop.appendChild(b);
+  });
+
+  if(g.reacao){
+    const clearBtn=document.createElement("button");
+    clearBtn.textContent="✖️";
+    clearBtn.title="Remover reação";
+    clearBtn.addEventListener("click",(e)=>{ e.stopPropagation(); saveReaction(g,null); closeReactionPicker(); });
+    pop.appendChild(clearBtn);
+  }
+
+  document.body.appendChild(pop);
+
+  // Posiciona perto do botão, sem sair da tela
+  const rect=btnEl.getBoundingClientRect();
+  const popRect=pop.getBoundingClientRect();
+  let top=rect.bottom+6;
+  let left=Math.min(rect.left, window.innerWidth-popRect.width-12);
+  left=Math.max(12,left);
+  if(top+popRect.height>window.innerHeight-12){ top=rect.top-popRect.height-6; }
+  pop.style.top=top+"px";
+  pop.style.left=left+"px";
+
+  openReactionState={popover:pop, overlay};
+}
+
+async function saveReaction(g, emoji){
+  const res=await sb(`gastos?id=eq.${g.id}`,{method:"PATCH",body:JSON.stringify({reacao:emoji})});
+  if(res.ok){
+    g.reacao=emoji;
+    renderList();
+    toast(emoji?"Reação salva":"Reação removida");
+  } else {
+    toast("Não foi possível salvar a reação");
+  }
 }
 
 /* ============================================================
@@ -1548,6 +1703,8 @@ function openSettings(){
   document.getElementById("fNome2").value=state.perfil.nome_pessoa2;
   document.getElementById("fRenda1").value=String(state.perfil.renda_pessoa1).replace(".",",");
   document.getElementById("fRenda2").value=String(state.perfil.renda_pessoa2).replace(".",",");
+  const meta=Number(state.perfil.meta_economia||0);
+  document.getElementById("fMeta").value=meta>0?String(meta).replace(".",","):"";
   document.getElementById("settingsOverlay").classList.remove("hidden");
   lockBody();
 }
@@ -1560,9 +1717,10 @@ async function savePerfil(){
   const nome_pessoa2=document.getElementById("fNome2").value.trim()||"Pessoa 2";
   const renda_pessoa1=parseFloat(document.getElementById("fRenda1").value.replace(/\./g,"").replace(",","."))||0;
   const renda_pessoa2=parseFloat(document.getElementById("fRenda2").value.replace(/\./g,"").replace(",","."))||0;
-  const res=await sb("perfil?id=eq.1",{method:"PATCH",body:JSON.stringify({nome_pessoa1,nome_pessoa2,renda_pessoa1,renda_pessoa2})});
+  const meta_economia=parseFloat(document.getElementById("fMeta").value.replace(/\./g,"").replace(",","."))||0;
+  const res=await sb("perfil?id=eq.1",{method:"PATCH",body:JSON.stringify({nome_pessoa1,nome_pessoa2,renda_pessoa1,renda_pessoa2,meta_economia})});
   if(res.ok){
-    state.perfil={...state.perfil,nome_pessoa1,nome_pessoa2,renda_pessoa1,renda_pessoa2};
+    state.perfil={...state.perfil,nome_pessoa1,nome_pessoa2,renda_pessoa1,renda_pessoa2,meta_economia};
     closeSettings(); renderAll(); toast("Configurações salvas");
   } else { toast("Erro ao salvar. Veja se a tabela 'perfil' existe no Supabase."); }
 }
