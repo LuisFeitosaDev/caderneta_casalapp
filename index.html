@@ -237,6 +237,20 @@
   .swipe-confirm-delete{background:var(--negative);color:#fff;}
 
   .status-line{text-align:center;color:var(--ink-soft);font-size:12px;padding:14px 0;}
+
+  /* MINIGAME */
+  .game-overlay{position:fixed;inset:0;background:var(--bg);z-index:70;overflow-y:auto;}
+  .game-overlay.hidden{display:none;}
+  .game-inner{max-width:560px;margin:0 auto;padding:18px 16px 30px;min-height:100%;display:flex;flex-direction:column;}
+  .game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .game-header h2{font-size:17px;font-weight:700;margin:0;}
+  .game-hud{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-bottom:8px;padding:0 2px;}
+  #gameCanvas{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:block;touch-action:none;}
+  .game-score-row{display:flex;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap;}
+  .game-score-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;min-width:110px;}
+  .game-score-card .name{font-size:11px;color:var(--ink-soft);text-transform:uppercase;font-weight:700;letter-spacing:.4px;}
+  .game-score-card .score{font-size:18px;font-weight:700;margin-top:2px;}
+  .game-end{text-align:center;padding:20px 0;}
 </style>
 </head>
 <body>
@@ -282,6 +296,9 @@ const APP_CONTENT_HTML = `
       <h1 class="brand-text">Caderneta<span class="sub">Controle financeiro do casal</span></h1>
     </div>
     <div class="top-actions">
+      <button class="icon-btn" onclick="openGame()" aria-label="Minigame">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="10" rx="5"/><path d="M6 11v4"/><path d="M4 13h4"/><circle cx="15" cy="11.5" r="1"/><circle cx="18" cy="14.5" r="1"/></svg>
+      </button>
       <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Alternar tema"></button>
       <button class="icon-btn" onclick="openSettings()" aria-label="Configurações">
         <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -444,6 +461,42 @@ const APP_CONTENT_HTML = `
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- MINIGAME: CATCH THE COINS -->
+<div class="game-overlay hidden" id="gameOverlay">
+  <div class="game-inner">
+    <div class="game-header">
+      <h2>🪙 Catch the Coins</h2>
+      <button class="icon-btn" onclick="closeGame()" aria-label="Fechar jogo">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div id="gameSelectScreen">
+      <p class="hint" style="text-align:center;margin-bottom:10px;">Quem vai jogar?</p>
+      <div class="pill-row" id="gamePlayerPills" style="justify-content:center;"></div>
+      <div class="game-score-row" id="gameBestScores"></div>
+      <p class="hint" style="text-align:center;">Pegue as moedas 🪙, desvie dos boletos 🧾. 30 segundos.</p>
+      <button class="save-btn" id="gameStartBtn" onclick="startGame()">Começar</button>
+    </div>
+
+    <div id="gamePlayScreen" style="display:none;">
+      <div class="game-hud">
+        <span id="gameScoreLabel">Pontos: 0</span>
+        <span id="gameTimeLabel">30s</span>
+      </div>
+      <canvas id="gameCanvas" width="320" height="420"></canvas>
+    </div>
+
+    <div id="gameEndScreen" class="game-end" style="display:none;">
+      <div style="font-size:40px;margin-bottom:6px;">🏁</div>
+      <div id="gameEndScoreText" style="font-size:22px;font-weight:700;margin-bottom:6px;"></div>
+      <div id="gameEndBestText" style="font-size:13px;color:var(--ink-soft);margin-bottom:20px;"></div>
+      <button class="save-btn" onclick="startGame()">Jogar de novo</button>
+      <button class="cancel-link" onclick="closeGame()">Fechar</button>
+    </div>
+  </div>
+</div>
 
 `;
 
@@ -1723,6 +1776,199 @@ async function savePerfil(){
     state.perfil={...state.perfil,nome_pessoa1,nome_pessoa2,renda_pessoa1,renda_pessoa2,meta_economia};
     closeSettings(); renderAll(); toast("Configurações salvas");
   } else { toast("Erro ao salvar. Veja se a tabela 'perfil' existe no Supabase."); }
+}
+
+/* ============================================================
+   MINIGAME: CATCH THE COINS
+   ============================================================ */
+let game = {
+  player: null,
+  score: 0,
+  timeLeft: 30,
+  running: false,
+  items: [],
+  basketX: 160,
+  canvas: null,
+  ctx: null,
+  lastSpawn: 0,
+  rafId: null,
+  timerId: null,
+  startedAt: 0
+};
+
+function openGame(){
+  document.getElementById("gameOverlay").classList.remove("hidden");
+  document.getElementById("gameSelectScreen").style.display = "block";
+  document.getElementById("gamePlayScreen").style.display = "none";
+  document.getElementById("gameEndScreen").style.display = "none";
+  game.player = null;
+  buildGamePlayerPills();
+  loadGameBestScores();
+  lockBody();
+}
+
+function closeGame(){
+  stopGameLoops();
+  document.getElementById("gameOverlay").classList.add("hidden");
+  unlockBody();
+}
+
+function buildGamePlayerPills(){
+  const el = document.getElementById("gamePlayerPills");
+  el.innerHTML = "";
+  [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2].forEach(nome => {
+    const p = document.createElement("div");
+    p.className = "pill" + (game.player === nome ? " active" : "");
+    p.style.background = game.player === nome ? "var(--accent)" : "";
+    p.textContent = nome;
+    p.onclick = () => { game.player = nome; buildGamePlayerPills(); };
+    el.appendChild(p);
+  });
+}
+
+async function loadGameBestScores(){
+  const el = document.getElementById("gameBestScores");
+  el.innerHTML = "";
+  const res = await sb("minigame_scores?select=pessoa,score");
+  if(!res.ok) return;
+  const rows = await res.json();
+  const bestByName = {};
+  rows.forEach(r => {
+    if(!bestByName[r.pessoa] || r.score > bestByName[r.pessoa]) bestByName[r.pessoa] = r.score;
+  });
+  [state.perfil.nome_pessoa1, state.perfil.nome_pessoa2].forEach(nome => {
+    const card = document.createElement("div");
+    card.className = "game-score-card";
+    card.innerHTML = `<div class="name">${escapeHtml(nome)}</div><div class="score">${bestByName[nome] ?? "—"}</div>`;
+    el.appendChild(card);
+  });
+}
+
+function startGame(){
+  if(!game.player){ toast("Selecione quem vai jogar"); return; }
+
+  document.getElementById("gameSelectScreen").style.display = "none";
+  document.getElementById("gameEndScreen").style.display = "none";
+  document.getElementById("gamePlayScreen").style.display = "block";
+
+  const canvas = document.getElementById("gameCanvas");
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = 420;
+  game.canvas = canvas;
+  game.ctx = canvas.getContext("2d");
+  game.basketX = canvas.width / 2;
+  game.items = [];
+  game.score = 0;
+  game.timeLeft = 30;
+  game.lastSpawn = 0;
+  game.startedAt = performance.now();
+  game.running = true;
+
+  updateGameHud();
+
+  canvas.addEventListener("pointermove", onGamePointerMove);
+  canvas.addEventListener("pointerdown", onGamePointerMove);
+
+  game.timerId = setInterval(() => {
+    game.timeLeft--;
+    updateGameHud();
+    if(game.timeLeft <= 0) endGame();
+  }, 1000);
+
+  game.rafId = requestAnimationFrame(gameLoop);
+}
+
+function onGamePointerMove(e){
+  const rect = game.canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (game.canvas.width / rect.width);
+  game.basketX = Math.max(28, Math.min(game.canvas.width - 28, x));
+}
+
+function updateGameHud(){
+  document.getElementById("gameScoreLabel").textContent = `Pontos: ${game.score}`;
+  document.getElementById("gameTimeLabel").textContent = `${Math.max(0, game.timeLeft)}s`;
+}
+
+function gameLoop(ts){
+  if(!game.running) return;
+  const ctx = game.ctx, canvas = game.canvas;
+  const elapsed = ts - game.startedAt;
+
+  // Spawna itens com frequência crescente
+  const spawnInterval = Math.max(420, 900 - elapsed / 60);
+  if(ts - game.lastSpawn > spawnInterval){
+    game.lastSpawn = ts;
+    const isBoleto = Math.random() < 0.18;
+    game.items.push({
+      x: 24 + Math.random() * (canvas.width - 48),
+      y: -20,
+      speed: 2.2 + Math.random() * 1.6 + elapsed / 12000,
+      emoji: isBoleto ? "🧾" : "🪙",
+      boleto: isBoleto
+    });
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Fundo sutil
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface') || "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Itens caindo
+  ctx.font = "28px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const basketY = canvas.height - 32;
+  const keep = [];
+  for(const it of game.items){
+    it.y += it.speed;
+    const caught = Math.abs(it.x - game.basketX) < 30 && it.y > basketY - 18 && it.y < basketY + 18;
+    if(caught){
+      game.score += it.boleto ? -1 : 1;
+      if(game.score < 0) game.score = 0;
+      updateGameHud();
+      continue; // some da tela
+    }
+    if(it.y > canvas.height + 20) continue; // saiu, descarta
+    ctx.fillText(it.emoji, it.x, it.y);
+    keep.push(it);
+  }
+  game.items = keep;
+
+  // Cesta
+  ctx.font = "34px sans-serif";
+  ctx.fillText("🧺", game.basketX, basketY);
+
+  game.rafId = requestAnimationFrame(gameLoop);
+}
+
+function stopGameLoops(){
+  game.running = false;
+  if(game.rafId) cancelAnimationFrame(game.rafId);
+  if(game.timerId) clearInterval(game.timerId);
+  if(game.canvas){
+    game.canvas.removeEventListener("pointermove", onGamePointerMove);
+    game.canvas.removeEventListener("pointerdown", onGamePointerMove);
+  }
+}
+
+async function endGame(){
+  stopGameLoops();
+  document.getElementById("gamePlayScreen").style.display = "none";
+  document.getElementById("gameEndScreen").style.display = "block";
+  document.getElementById("gameEndScoreText").textContent = `${game.player}: ${game.score} pontos`;
+
+  const res = await sb("minigame_scores", { method: "POST", body: JSON.stringify([{ pessoa: game.player, score: game.score }]) });
+
+  const bestRes = await sb(`minigame_scores?pessoa=eq.${encodeURIComponent(game.player)}&select=score&order=score.desc&limit=1`);
+  let best = game.score;
+  if(bestRes.ok){ const rows = await bestRes.json(); if(rows[0]) best = rows[0].score; }
+
+  document.getElementById("gameEndBestText").textContent =
+    game.score >= best ? "🎉 Novo recorde!" : `Seu recorde: ${best} pontos`;
+
+  if(!res.ok){ toast("Não foi possível salvar a pontuação"); }
 }
 
 /* ============================================================
